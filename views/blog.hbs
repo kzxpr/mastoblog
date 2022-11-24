@@ -1,0 +1,51 @@
+<div class="blog--wrap">
+    <nav class="blog--menu">
+        <ul class="taglist">
+            {{#each tags}}
+                {{#if (eq this.id ../tagid)}}
+                    <li class="taglist--sel"><a href='/tag/{{this.id}}'>{{this.name}}</a></li>
+                {{else}}
+                    <li class="taglist--item"><a href='/tag/{{this.id}}'>{{this.name}}</a></li>
+                {{/if}}
+            {{/each}}
+        </ul>
+        <div></div>
+        <div>
+            {{#each links}}
+                <a href='{{this.url}}' target='_new'>{{this.name}}</a>
+            {{/each}}
+        </div>
+    </nav>
+    <div class="blog--main">
+        {{#if (gt (count posts) 0)}}
+            {{#each posts}}
+                <section class="post--wrap">
+                    <div class="post--header">{{this.title}}</div>
+                    <div class="post--body">{{{this.body}}}</div>
+                    <div class="post--tags">
+                        <ul class="post--tags--list">
+                            {{#each this.tags}}
+                                {{#if (eq this.id ../tagid)}}
+                                    <li class="taglist--sel"><a href="/tag/{{this.id}}">{{this.name}}</a></li>
+                                {{else}}
+                                    <li class="taglist--item"><a href="/tag/{{this.id}}">{{this.name}}</a></li>
+                                {{/if}}
+                            {{/each}}
+                        </ul>
+                    </div>
+                    <div class="post--footer">{{prettydatetime this.createdAt}}</div>
+                </section>
+            {{/each}}
+            <section class="blog--more">
+                <a href="/page/{{nextpage}}">MORE!</a>
+            </section>
+        {{else}}
+            <section class="post--empty">
+                No (more) matches your request...
+            </section>
+            <section class="blog--more">
+                <a href="/">To frontpage</a>
+            </section>
+        {{/if}}
+    </div>
+</div>
