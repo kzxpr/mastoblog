@@ -2,6 +2,7 @@ const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 
 async function loadActorByUsername(username, domain){
+    console.log("\x1b[33m%s\x1b[0m", "PROFILE", "for", username)
     return new Promise(async (resolve, reject) => {
         await knex("apaccounts").where("username", "=", username).select("pubkey").first()
         .then((result) => {
@@ -10,17 +11,46 @@ async function loadActorByUsername(username, domain){
             } else {
                 let tempActor = {};
                 
+                // THIS IS DESCRIBED FOR MASTODON AS "PROFILE":
+                // SEE https://docs.joinmastodon.org/spec/activitypub/#profile
+
                 const preferredUsername = result.displayname ? result.displayname : username;
-                tempActor["@context"] = new Array("https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1");
+                const context_featured = {
+                    "toot": "http://joinmastodon.org/ns#",
+                    "featured": {
+                      "@id": "toot:featured",
+                      "@type": "@id"
+                    }
+                  };
+                tempActor["@context"] = new Array("https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1", context_featured);
                 tempActor["id"] = "https://"+domain+"/u/"+username;
+                tempActor["name"] = "Mr. "+username;
+                tempActor["summary"] = "This is "+username+"s summary";
+                tempActor["url"] = "https://"+domain+"/?user="+username;
                 tempActor["type"] = "Person";
                 tempActor["preferredUsername"] = preferredUsername;
-                tempActor["inbox"] = "https://"+domain+"/api/inbox";
-                //tempActor["followers"] = "https://"+domain+"/u/"+username+"/followers"
+                tempActor["discoverable"] = true;
+                tempActor["inbox"] = "https://"+domain+"/"+username+"/inbox";
+                //tempActor["inbox"] = "https://"+domain+"/api/inbox";
+                tempActor["outbox"] = "https://"+domain+"/u/"+username+"/outbox";
+                tempActor["icon"] = {
+                    "type": "Image",
+                    "mediaType": "image/png",
+                    "url": "https://"+domain+"/public/007.png"
+                };
+                tempActor["followers"] = "https://"+domain+"/u/"+username+"/followers"
+                var attachment = new Array();
+                attachment.push({
+                    "type": "PropertyValue",
+                    "name": "Homepage",
+                    "value": "<a href=\"https://hackademiet.dk\" rel=\"me nofollow noopener noreferrer\" target=\"_blank\"><span class=\"invisible\">https://</span><span class=\"\">hackademiet.dk</span><span class=\"invisible\"></span}"
+                  })
+                tempActor["attachment"] = attachment
                 tempActor["publicKey"] = {};
                 tempActor["publicKey"].id = "https://"+domain+"/u/"+username+"#main-key";
                 tempActor["publicKey"].owner = "https://"+domain+"/u/"+username;
                 tempActor["publicKey"].publicKeyPem = result.pubkey;
+                tempActor["featured"] = "https://"+domain+"/u/"+username+"/collections/featured"
                 
                 // Added this followers URI for Pleroma compatibility, see https://github.com/dariusk/rss-to-activitypub/issues/11#issuecomment-471390881
                 // New Actors should have this followers URI but in case of migration from an old version this will add it in on the fly

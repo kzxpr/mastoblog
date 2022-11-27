@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const signAndSend = require("./signAndSend")
+const { signAndSend } = require("./signAndSend")
 
 async function sendAcceptMessage(thebody, name, domain, targetDomain) {
     const guid = crypto.randomBytes(16).toString('hex');

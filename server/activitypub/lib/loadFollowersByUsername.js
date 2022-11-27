@@ -9,6 +9,7 @@ async function loadFollowersByUsername(username, domain){
                 return v.follower;
             })
             let followersCollection = {
+                "@context":["https://www.w3.org/ns/activitystreams"],
                 "type":"OrderedCollection",
                 "totalItems":followers.length,
                 "id":`https://${domain}/u/${username}/followers`,
@@ -18,8 +19,7 @@ async function loadFollowersByUsername(username, domain){
                     "partOf":`https://${domain}/u/${username}/followers`,
                     "orderedItems": followers,
                     "id":`https://${domain}/u/${username}/followers?page=1`
-                },
-                "@context":["https://www.w3.org/ns/activitystreams"]
+                }
             };
             resolve(followersCollection)
         })

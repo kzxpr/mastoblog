@@ -11,9 +11,11 @@
         </ul>
         <div></div>
         <div>
-            {{#each links}}
-                <a href='{{this.url}}' target='_new'>{{this.name}}</a>
-            {{/each}}
+            <ul class="linklist">
+                {{#each links}}
+                    <li class="linklist--item"><a href='{{this.url}}' target='_new'>{{this.name}}</a></li>
+                {{/each}}
+            </ul>
         </div>
     </nav>
     <div class="blog--main">

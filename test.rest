@@ -1,0 +1,14 @@
+POST https://hackademiet.dk/u/test/outbox
+Content-Type: application/json
+
+###
+
+GET https://todon.eu/users/kzxpr
+Access-Control-Allow-Origin: *
+Content-Type: application/activity+json
+
+###
+
+GET https://yiny.org/accounts/djhnm
+Access-Control-Allow-Origin: *
+Content-Type: application/json

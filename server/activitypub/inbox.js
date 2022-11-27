@@ -7,34 +7,18 @@ const express = require('express'),
 const db = require("./../../knexfile")
 const knex = require("knex")(db)
 
+const { startAPLog, endAPLog } = require("./lib/aplog")
+
 const sendAcceptMessage = require("./lib/sendAcceptMessage")
 const parseJSON = require("./lib/parseJSON")
-
-async function addFollower(username, follower){
-    // Add the user to the DB of accounts that follow the account
-    // get the followers JSON for the user
-    // Check if user exists
-    
-    const result = await knex("apaccounts").where("name", "=", username).select("name").first();
-    if (result === undefined) {
-        console.log(`No record found for ${username}.`);
-    } else {
-        // update followers
-        console.log("Add follower",follower)
-        try {
-            // update into DB
-            const guid = crypto.randomBytes(16).toString('hex');
-            let newFollowers = await knex("apfollowers").insert({"guid": guid, user: username, "follower": follower, createdAt: knex.fn.now() })
-            .onConflict(['user', 'follower'])
-            .ignore()
-        } catch(e) {
-            console.log('error', e);
-        }
-    }
-}
+const { makeMessage } = require("./lib/makeMessage")
+const { signAndSend } = require("./lib/signAndSend")
+const { wrapInCreate } = require("./lib/wrapInCreate");
+const { sendLatestMessages } = require("./lib/sendLatestMessages")
+const { addFollower } = require("./lib/addFollower")
 
 router.post('/', async function (req, res) {
-    console.log("INBOX",req.body)
+    const aplog = await startAPLog(req)
     // pass in a name for an account, if the account doesn't exist, create it!
     let domain = req.app.get('domain');
     const myURL = new URL(req.body.actor);
@@ -46,14 +30,27 @@ router.post('/', async function (req, res) {
     console.log("Reqtype",reqtype)
     
     if (typeof req.body.object === 'string'){
-        let name = req.body.object.replace(`https://${domain}/u/`,'');
-        const username = name+"@"+domain;
+        let local_username = req.body.object.replace(`https://${domain}/u/`,'');
+        //const username = name;//+"@"+domain;
+
+        const user_id = await knex("apaccounts").where("username", "=", local_username).first()
+        .then((account) => {
+            return account.id
+        })
 
         if(reqtype === 'Follow') {  
-            await sendAcceptMessage(req.body, name, domain, targetDomain);
+            await sendAcceptMessage(req.body, local_username, domain, targetDomain);
             const follower = req.body.actor;
-            console.log("FOLLOW MED",req.body, name, domain, targetDomain)
-            await addFollower(username, follower)
+            //console.log("FOLLOW MED",req.body, local_username, domain, targetDomain)
+            await endAPLog(aplog, { local_username, domain, targetDomain })
+            await addFollower(local_username, follower)
+            await sendLatestMessages(follower, user_id, local_username, domain)
+            .then((d) => {
+                console.log("Pinned messages were sent to new follower: "+follower)
+            })
+            .catch((e) => {
+                console.error("ERROR in sendLatestMessages", e)
+            })
         }
     }else{
         if(reqtype === 'Create'){
@@ -61,6 +58,7 @@ router.post('/', async function (req, res) {
             console.log("Objtype",objtype)
             if(objtype==="Note"){
                 console.log("I got a note saying",req.body.object.content)
+                await endAPLog(aplog, "Received note")
             }
         }
     }

@@ -1,20 +1,58 @@
+require("dotenv-flow").config();
 const express = require("express");
 const app = express();
+const port = process.env.PORT | 3001;
 
 /* KNEX */
 const { Tag, Post } = require("./server/models/db")
+const db = require("./knexfile")
+const knex = require("knex")(db)
 
+/* CORS */
 const cors = require('cors')
 
-app.set('domain', "hackademiet.dk");
+/* PATH */
+const path = require("path")
+
+/* PASS PROXY - TO GET IPs */
+app.set('trust proxy',true); 
+
+/* BODY PARSER */
+var bodyParser = require('body-parser')
+app.use(bodyParser.json({type: 'application/activity+json'})); // support json encoded bodies
+app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
+
+async function getConfigByKey(key){
+    return await knex("config").where("key", "=", key).first().select("value").then((d) => { return d.value });
+}
+
+async function loadConfig(){
+    const my_domain = await getConfigByKey("domain")
+    app.set('domain', my_domain);
+}
+
+loadConfig();
+
+
+/* ACTIVITY PUB */
 const ap_admin = require("./server/activitypub/admin")
 const ap_webfinger = require("./server/activitypub/webfinger")
 const ap_user = require("./server/activitypub/user")
-const ap_inbox = require("./server/activitypub/inbox")
-app.use("/ap/admin", ap_admin)
+//const ap_inbox = require("./server/activitypub/inbox")
+app.use("/ap/admin/api", ap_admin)
 app.use("/.well-known/webfinger/", cors(), ap_webfinger)
 app.use("/u", cors(), ap_user)
-app.use("/api/inbox", cors(), ap_inbox)
+//app.use("/api/inbox", cors(), ap_inbox)
+
+app.get("/ap/admin", (req, res) => {
+    res.sendFile(path.join(__dirname, "server", "activitypub", "admin.html"))
+})
+
+app.get("/public/007.png", (req, res) => {
+    //console.log("0000000000000007")
+    res.sendFile(path.join(__dirname, "public", "007.png"))
+})
+//app.use('/public', express.static(__dirname + '/public'));
 
 function fillWithZero(str, len){
     var countstr = str.toString();
@@ -58,21 +96,19 @@ hbs.handlebars.registerHelper('count', function(arr){
 app.engine("hbs", hbs.engine);
 app.set("view engine", "hbs");
 
-/* BODY PARSER */
-var bodyParser = require('body-parser')
-app.use(bodyParser.urlencoded({ extended: false }))
-
 async function getSiteInfo(){
+    const sitetitle = await getConfigByKey("sitetitle");
+    const sitesubtitle = await getConfigByKey("sitesubtitle")
+    const user_url = await getConfigByKey("user_url")
     return {
-        sitetitle: "Hackademiet.dk",
-        sitesubtitle: "> Hej",
-        instance: "test@hackademiet.dk",
-        my_url: "test@hackademiet.dk",
+        sitetitle,
+        sitesubtitle,
+        my_url: user_url,
         footer: "Goodbye World!",
-        links: [ { name: "VHS-fabrikken", url: "https://vhs-fabrikken.dk" } ],
+        links: [ { name: "website1", url: "https://myweb.com" } ],
         followers: [
-            { name: "Kasper" },
-            { name: "Trine" },
+            { name: "user1" },
+            { name: "user2" },
         ]
     }
     // "https://toot.community/users/openculture",
@@ -145,6 +181,6 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
         })
 });
 
-app.listen(3000, () => {
-    console.log("Listen on the port 3000...");
+app.listen(port, () => {
+    console.log("Listen on the port "+port);
 });

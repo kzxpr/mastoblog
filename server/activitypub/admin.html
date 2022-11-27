@@ -1,0 +1,15 @@
+<div>
+    <h1>ActivityPub admin</h1>
+    <h2>Create new actor</h2>
+    <form action="/ap/admin/api/createActor" method="get">
+        <input type="text" name="username" placeholder="username">
+        <input type="submit" value="Create actor">
+    </form>
+    <h2>Create new post</h2>
+    <form action="/ap/admin/api/createPost" method="post">
+        <input type="text" name="username" placeholder="username"><br>
+        <textarea name="content"></textarea><br>
+        <input type="text" name="cc" placeholder="cc" value="https://todon.eu/users/kzxpr"><br>
+        <input type="submit" value="Create post">
+    </form>
+</div>

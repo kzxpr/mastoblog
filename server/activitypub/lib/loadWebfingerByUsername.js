@@ -11,13 +11,19 @@ async function loadWebfingerByUsername(username, domain){
             } else {
                 let webfinger = {};
                 webfinger.subject = "acct:"+username+"@"+domain;
+                //webfinger.icon = "https://"+domain+"/public/007.png"
                 webfinger.links = new Array();
                 let selflink = {
                     "rel": "self",
                     "type": "application/activity+json",
                     "href": "https://"+domain+"/u/"+username
                 }
-                webfinger.links.push(selflink);
+                let profilelink = {
+                  "rel": "http://webfinger.net/rel/profile-page",
+                  "type": "text/html",
+                  "href": "https://"+domain+"/u/"+username+"/profile"
+                }
+                webfinger.links.push(selflink, profilelink);
                 //console.log(webfinger)
                 console.log("Resolved webfinger!")
                 resolve(webfinger)
