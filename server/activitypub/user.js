@@ -207,7 +207,7 @@ router.get("/:username/inbox", async(req, res) => {
     res.sendStatus(404)
 })
 
-router.post('/:username/inbox', async function (req, res) {
+/*router.post('/:username/inbox', async function (req, res) {
     const aplog = await startAPLog(req)
     // pass in a name for an account, if the account doesn't exist, create it!
     let domain = req.app.get('domain');
@@ -268,7 +268,7 @@ router.post('/:username/inbox', async function (req, res) {
         }
     }
     //console.log("**************************************")
-});
+});*/
 
 router.get("*", async(req, res) => {
     const aplog = await startAPLog(req)
