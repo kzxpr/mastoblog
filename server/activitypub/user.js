@@ -3,7 +3,6 @@ const express = require('express'),
     crypto = require('crypto'),
     router = express.Router();
 
-const { reject } = require('promise');
 const db = require("./../../knexfile")
 const knex = require("knex")(db)
 
