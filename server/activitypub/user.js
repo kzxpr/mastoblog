@@ -204,7 +204,7 @@ router.get("/:username/statuses/:messageid", async (req, res) => {
 
 router.get("/:username/inbox", async(req, res) => {
     console.log("TRIGGER get /inbox")
-    res.send("ok")
+    res.sendStatus(404)
 })
 
 router.post('/:username/inbox', async function (req, res) {
@@ -243,9 +243,14 @@ router.post('/:username/inbox', async function (req, res) {
             .then((d) => {
                 console.log("Pinned messages were sent to new follower: "+follower)
             })
-            .catch((e) => {
+            .catch(async(e) => {
                 console.error("ERROR in sendLatestMessages", e)
+                await endAPLog(aplog, "Received note", 500)
+                res.sendStatus(500)
             })
+        }else{
+            await endAPLog(aplog, "Not found", 404)
+            res.sendStatus(404)
         }
     }else{
         if(reqtype === 'Create'){
@@ -256,6 +261,9 @@ router.post('/:username/inbox', async function (req, res) {
                 await endAPLog(aplog, "Received note", 201)
                 res.sendStatus(201)
             }
+        }else{
+            await endAPLog(aplog, "Not found", 404)
+            res.sendStatus(404)
         }
     }
     //console.log("**************************************")
