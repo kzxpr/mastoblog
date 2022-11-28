@@ -223,35 +223,36 @@ router.post('/:username/inbox', async function (req, res) {
         let local_username = req.body.object.replace(`https://${domain}/u/`,'');
         //const username = name;//+"@"+domain;
 
-        const user_id = await knex("apaccounts").where("username", "=", local_username).first()
-        .then((account) => {
+        await knex("apaccounts").where("username", "=", local_username).first()
+        .then(async(account) => {
             if(account){
-                return account.id
+                user_id = account.id
+                if(reqtype === 'Follow') {  
+                    await sendAcceptMessage(req.body, local_username, domain, targetDomain);
+                    const follower = req.body.actor;
+                    //console.log("FOLLOW MED",req.body, local_username, domain, targetDomain)
+                    await endAPLog(aplog, { local_username, domain, targetDomain })
+                    await addFollower(local_username, follower)
+                    await sendLatestMessages(follower, user_id, local_username, domain)
+                    .then((d) => {
+                        console.log("Pinned messages were sent to new follower: "+follower)
+                    })
+                    .catch(async(e) => {
+                        console.error("ERROR in sendLatestMessages", e)
+                        await endAPLog(aplog, "Received note", 500)
+                        res.sendStatus(500)
+                    })
+                }else{
+                    await endAPLog(aplog, "Not found", 404)
+                    res.sendStatus(404)
+                }
             }else{
                 res.sendStatus(500)
             }
             
         })
 
-        if(reqtype === 'Follow') {  
-            await sendAcceptMessage(req.body, local_username, domain, targetDomain);
-            const follower = req.body.actor;
-            //console.log("FOLLOW MED",req.body, local_username, domain, targetDomain)
-            await endAPLog(aplog, { local_username, domain, targetDomain })
-            await addFollower(local_username, follower)
-            await sendLatestMessages(follower, user_id, local_username, domain)
-            .then((d) => {
-                console.log("Pinned messages were sent to new follower: "+follower)
-            })
-            .catch(async(e) => {
-                console.error("ERROR in sendLatestMessages", e)
-                await endAPLog(aplog, "Received note", 500)
-                res.sendStatus(500)
-            })
-        }else{
-            await endAPLog(aplog, "Not found", 404)
-            res.sendStatus(404)
-        }
+        
     }else{
         if(reqtype === 'Create'){
             const objtype = req.body.object.type;
