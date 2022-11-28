@@ -22,6 +22,12 @@ var bodyParser = require('body-parser')
 app.use(bodyParser.json({type: 'application/activity+json'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
+/* ALIVE TEST */
+app.get("/alive", (req, res) => {
+    console.log("TRIGGER")
+    res.send("ALIVE!!")
+})
+
 /* LOAD CONFIG */
 async function getConfigByKey(key){
     return await knex("config").where("key", "=", key).first().select("value").then((d) => { return d.value });
@@ -224,11 +230,6 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
             nextpage
         })
 });
-
-app.get("/alive", (req, res) => {
-    console.log("TRIGGER")
-    res.send("ALIVE!!")
-})
 
 app.listen(port, () => {
     console.log("Listen on the port "+port);
