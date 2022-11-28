@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>{{sitetitle}}</title>
+        <title>{{#if pagetitle}}{{pagetitle}} //{{/if}}{{sitetitle}}</title>
         <style type="text/css">
         body{
             font-family: 'Courier New', Courier, monospace;
@@ -21,7 +21,10 @@
             font-size: 10pt;
         }
         .sitetitle{
-            font-size: 18pt;
+            font-size: 20pt;
+        }
+        .sitetitle > a{
+            color: #000;
         }
         .sitesubtitle{
             margin: 10px 0px;
@@ -54,13 +57,23 @@
             padding: 20px;
         }
         .post--header{
+            font-size: 16pt;
             font-weight: bold;
         }
         .post--body{
             margin: 3px 0px;
         }
-        .post--footer{
+        h2{
+            font-size: 15pt;
+            text-decoration: underline;
+        }
+        .post--date{
             font-style: italic;
+        }
+        .post--footer{
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
         }
         .post--empty{
             min-height: 100px;
@@ -126,7 +139,7 @@
         <main>
             <header>
                 <div class="sitetitle">
-                    {{sitetitle}}
+                    <a href='/'>{{sitetitle}}</a>
                 </div>
                 <div class="sitesubtitle">
                     {{sitesubtitle}}
@@ -143,7 +156,7 @@
                 {{{body}}}
             </section>
             <footer>
-                {{footer}}
+                {{{footer}}}
             </footer>
         </main>
     </body>

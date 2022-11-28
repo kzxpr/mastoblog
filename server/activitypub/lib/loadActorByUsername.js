@@ -24,8 +24,8 @@ async function loadActorByUsername(username, domain){
                   };
                 tempActor["@context"] = new Array("https://www.w3.org/ns/activitystreams", "https://w3id.org/security/v1", context_featured);
                 tempActor["id"] = "https://"+domain+"/u/"+username;
-                tempActor["name"] = "Mr. "+username;
-                tempActor["summary"] = "This is "+username+"s summary";
+                tempActor["name"] = result.displayname ? result.displayname : username;
+                tempActor["summary"] = result.summary;
                 tempActor["url"] = "https://"+domain+"/?user="+username;
                 tempActor["type"] = "Person";
                 tempActor["preferredUsername"] = preferredUsername;
@@ -36,14 +36,14 @@ async function loadActorByUsername(username, domain){
                 tempActor["icon"] = {
                     "type": "Image",
                     "mediaType": "image/png",
-                    "url": "https://"+domain+"/public/007.png"
+                    "url": "https://"+domain+"/public/"+result.icon+".png"
                 };
                 tempActor["followers"] = "https://"+domain+"/u/"+username+"/followers"
                 var attachment = new Array();
                 attachment.push({
                     "type": "PropertyValue",
                     "name": "Homepage",
-                    "value": "<a href=\"https://hackademiet.dk\" rel=\"me nofollow noopener noreferrer\" target=\"_blank\"><span class=\"invisible\">https://</span><span class=\"\">hackademiet.dk</span><span class=\"invisible\"></span}"
+                    "value": "<a href=\""+result.homepage+"\" rel=\"me nofollow noopener noreferrer\" target=\"_blank\"><span class=\"\">"+result.homepage+"</span></a>"
                   })
                 tempActor["attachment"] = attachment
                 tempActor["publicKey"] = {};

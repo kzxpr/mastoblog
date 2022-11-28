@@ -90,7 +90,9 @@ router.get("/:username/messages/:messageid", async(req, res) => {
 })
 
 router.post("/:username/outbox", async (req, res) => {
+    const aplog = await startAPLog(req)
     console.log("TRIGGER post on /outbox", req.body)
+    await endAPLog(aplog, "ok")
     res.send("OK")
 })
 
@@ -191,7 +193,7 @@ router.get("/:username/statuses/:messageid", async (req, res) => {
                 await endAPLog(aplog, msg)
                 res.json(msg)
             }else{
-                await endAPLog(aplog, "", 404)
+                await endAPLog(aplog, "The message you requested doesn't exist", 404)
                 res.sendStatus(404)
             }
         })
@@ -213,11 +215,11 @@ router.post('/:username/inbox', async function (req, res) {
     let domain = req.app.get('domain');
     const myURL = new URL(req.body.actor);
     let targetDomain = myURL.hostname;
-    console.log("INBOX",targetDomain)
+    //console.log("INBOX",targetDomain)
     // TODO: add "Undo" follow event
     
     const reqtype = req.body.type;
-    console.log("Reqtype",reqtype)
+    //console.log("Reqtype",reqtype)
     
     if (typeof req.body.object === 'string'){
         let local_username = req.body.object.replace(`https://${domain}/u/`,'');
@@ -225,7 +227,12 @@ router.post('/:username/inbox', async function (req, res) {
 
         const user_id = await knex("apaccounts").where("username", "=", local_username).first()
         .then((account) => {
-            return account.id
+            if(account){
+                return account.id
+            }else{
+                res.sendStatus(500)
+            }
+            
         })
 
         if(reqtype === 'Follow') {  
@@ -248,11 +255,24 @@ router.post('/:username/inbox', async function (req, res) {
             console.log("Objtype",objtype)
             if(objtype==="Note"){
                 console.log("I got a note saying",req.body.object.content)
-                await endAPLog(aplog, "Received note")
+                await endAPLog(aplog, "Received note", 201)
+                res.sendStatus(201)
             }
         }
     }
-    console.log("**************************************")
+    //console.log("**************************************")
 });
+
+router.get("*", async(req, res) => {
+    const aplog = await startAPLog(req)
+    await endAPLog(aplog, "", 404)
+    res.sendStatus(404)
+})
+
+router.post("*", async(req, res) => {
+    const aplog = await startAPLog(req)
+    await endAPLog(aplog, "", 404)
+    res.sendStatus(404)
+})
 
 module.exports = router;

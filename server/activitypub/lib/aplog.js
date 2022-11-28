@@ -3,9 +3,9 @@ const knex = require("knex")(db)
 
 async function startAPLog(req){
     const ip = req.ip;
-    const params = JSON.stringify(req.params)
+    //const params = JSON.stringify(req.params)
     const body = JSON.stringify(req.body)
-    const query = JSON.stringify(req.query)
+    //const query = JSON.stringify(req.query)
     const url = req.originalUrl;
     const method = req.method;
     return new Promise(async(resolve, reject) => {
@@ -14,9 +14,7 @@ async function startAPLog(req){
             timestamp: knex.fn.now(),
             url,
             method,
-            params,
             body,
-            query,
             statuscode: -1
         })
         .then((d) => {

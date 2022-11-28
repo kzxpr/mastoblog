@@ -64,6 +64,27 @@ app.use("/ap/admin/api", ap_admin)
 app.use("/.well-known/webfinger/", cors(), ap_webfinger)
 app.use("/u", cors(), ap_user)
 
+app.get("/ap/admin/logs", async(req, res) => {
+    await knex("aprequests").where("timestamp", ">", knex.raw("now() - interval 24 hour")).orderBy("timestamp", "desc")
+    .then((logs) => {
+        res.render("logs", { logs })
+    })
+    .catch((e) => {
+        res.sendStatus(404)
+    })
+})
+
+app.get("/ap/admin/logs/:logid", async(req, res) => {
+    const { logid } = req.params;
+    await knex("aprequests").where("id", "=", logid).first()
+    .then((log) => {
+        res.render("logitem", { log })
+    })
+    .catch((e) => {
+        res.sendStatus(404)
+    })
+})
+
 app.get("/ap/admin", (req, res) => {
     res.sendFile(path.join(__dirname, "server", "activitypub", "admin.html"))
 })
@@ -124,8 +145,8 @@ async function getSiteInfo(){
         sitetitle,
         sitesubtitle,
         my_url: user_url,
-        footer: "Goodbye World!",
-        links: [ { name: "website1", url: "https://myweb.com" } ],
+        footer: "This website is running on <a href='https://github.com/kzxpr/mastoblog' target='_new'>MastoBlog</a>. Download the repository and host your own!",
+        links: [ { name: "MastoBlog code", url: "https://github.com/kzxpr/mastoblog" } ],
         followers: [
             { name: "user1" },
             { name: "user2" },
@@ -156,31 +177,33 @@ app.post("/followme", async (req, res) => {
 
 app.get(["/what"], async (req, res) => {
     const siteinfo = await getSiteInfo();
-    const text = "<h2>What?</h2>Hvad er Mastodon?";
+    const text = "<h2>What?</h2>Hvad er <a href='https://joinmastodon.org/' target='_new'>Mastodon</a>?";
     res.render("text", { ...siteinfo, text });
 })
 
-app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/:tagid", "/tag/:tagid/page/:pageno", "/tag/:tagid/post/:postid"], async (req, res) => {
+app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/:tagname", "/tag/:tagname/page/:pageno", "/tag/:tagname/post/:postid"], async (req, res) => {
     var postid=null;
-    var tagid=null;
+    var tagname=null;
     var pageno=0;
     var postprpage = 10;
     if(req.params.postid){
         postid = req.params.postid;
     }
-    if(req.params.tagid){
-        tagid = req.params.tagid;
+    if(req.params.tagname){
+        tagname = req.params.tagname;
     }
     if(req.params.pageno){
         pageno = req.params.pageno;
     }
     nextpage = parseInt(pageno) + 1;
+    var pagetitle="";
 
     var posts;
     if(postid!==null){
         posts = await Post.query().where("id", "=", postid).andWhere("hidden", "=", 0).orderBy("createdAt", "desc").withGraphFetched("tags.^1")
-    }else if(tagid!==null){
-        posts = await Tag.query().where("id", "=", tagid).withGraphFetched("posts.tags.^1").first().then(async(tag) => {
+        pagetitle = posts[0].title;
+    }else if(tagname!==null){
+        posts = await Tag.query().where("url_friendly", "=", tagname).withGraphFetched("posts.tags.^1").first().then(async(tag) => {
             return tag.posts;
         })
     }else{
@@ -194,7 +217,8 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
     res.render("blog",
         {
             ...siteinfo,
-            tagid: tagid,
+            pagetitle,
+            tagname: tagname,
             tags,
             posts,
             nextpage

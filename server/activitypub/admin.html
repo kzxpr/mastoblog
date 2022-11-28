@@ -8,8 +8,26 @@
     <h2>Create new post</h2>
     <form action="/ap/admin/api/createPost" method="post">
         <input type="text" name="username" placeholder="username"><br>
+        <input type="text" name="link" placeholder="https://"><br>
         <textarea name="content"></textarea><br>
-        <input type="text" name="cc" placeholder="cc" value="https://todon.eu/users/kzxpr"><br>
+        <input type="text" name="cc" placeholder="cc"><br>
         <input type="submit" value="Create post">
+    </form>
+    <h2>Create new page</h2>
+    <form action="/ap/admin/api/createPage" method="post">
+        <input type="text" name="username" placeholder="username"><br>
+        <input type="text" name="link" placeholder="https://"><br>
+        <textarea name="content"></textarea><br>
+        <input type="text" name="cc" placeholder="cc"><br>
+        <input type="submit" value="Create link">
+    </form>
+    <h2>Create new article</h2>
+    <form action="/ap/admin/api/createArticle" method="post">
+        <input type="text" name="username" placeholder="username"><br>
+        <input type="text" name="name" placeholder="Heading without HTML"><br>
+        <textarea name="content"></textarea><br>
+        <input type="text" name="link" placeholder="https://"><br>
+        <input type="text" name="cc" placeholder="cc"><br>
+        <input type="submit" value="Create article">
     </form>
 </div>

@@ -2,6 +2,8 @@ const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 
 const { signAndSend } = require("./signAndSend")
+const { makeMessage } = require("./makeMessage")
+const { wrapInCreate } = require("./wrapInCreate")
 
 async function sendLatestMessages(follower, user_id, username, domain){
     return new Promise(async(resolve, reject) => {
