@@ -1,8 +1,7 @@
 'use strict';
 const express = require('express'),
     crypto = require('crypto'),
-    request = require('request'),
-      router = express.Router();
+    router = express.Router();
 
 const { reject } = require('promise');
 const db = require("./../../knexfile")

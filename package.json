@@ -28,6 +28,7 @@
     "knex": "^2.3.0",
     "mysql": "^2.18.1",
     "objection": "^3.0.1",
-    "readline-sync": "^1.4.10"
+    "readline-sync": "^1.4.10",
+    "request": "^2.88.2"
   }
 }
