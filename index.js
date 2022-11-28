@@ -226,6 +226,7 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
 });
 
 app.get("/alive", (req, res) => {
+    console.log("TRIGGER")
     res.send("ALIVE!!")
 })
 
