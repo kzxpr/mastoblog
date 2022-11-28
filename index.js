@@ -225,6 +225,10 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
         })
 });
 
+app.get("/alive", (req, res) => {
+    res.send("ALIVE!!")
+})
+
 app.listen(port, () => {
     console.log("Listen on the port "+port);
 });
