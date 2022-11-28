@@ -22,6 +22,7 @@ var bodyParser = require('body-parser')
 app.use(bodyParser.json({type: 'application/activity+json'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
+/* LOAD CONFIG */
 async function getConfigByKey(key){
     return await knex("config").where("key", "=", key).first().select("value").then((d) => { return d.value });
 }
@@ -33,16 +34,35 @@ async function loadConfig(){
 
 loadConfig();
 
+/* BASIC AUTH FOR ACTIVITY PUB */
+basicAuth = require('express-basic-auth');
+let basicUserAuth = basicAuth({
+    authorizer: asyncAuthorizer,
+    authorizeAsync: true,
+    challenge: true
+});
+
+function asyncAuthorizer(username, password, cb) {
+    let isAuthorized = false;
+    const isPasswordAuthorized = username === process.env.AP_USER;
+    const isUsernameAuthorized = password === process.env.AP_PASS;
+    isAuthorized = isPasswordAuthorized && isUsernameAuthorized;
+    if (isAuthorized) {
+        return cb(null, true);
+    }
+    else {
+        return cb(null, false);
+    }
+}
 
 /* ACTIVITY PUB */
 const ap_admin = require("./server/activitypub/admin")
 const ap_webfinger = require("./server/activitypub/webfinger")
 const ap_user = require("./server/activitypub/user")
-//const ap_inbox = require("./server/activitypub/inbox")
+app.use("/ap/admin", cors({ credentials: true, origin: true }), basicUserAuth);
 app.use("/ap/admin/api", ap_admin)
 app.use("/.well-known/webfinger/", cors(), ap_webfinger)
 app.use("/u", cors(), ap_user)
-//app.use("/api/inbox", cors(), ap_inbox)
 
 app.get("/ap/admin", (req, res) => {
     res.sendFile(path.join(__dirname, "server", "activitypub", "admin.html"))

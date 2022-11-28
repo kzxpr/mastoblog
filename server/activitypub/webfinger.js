@@ -3,8 +3,10 @@ const express = require('express'),
       router = express.Router();
 
 const { loadWebfingerByUsername } = require("./lib/loadWebfingerByUsername")
+const { startAPLog, endAPLog } = require("./lib/aplog")
 
 router.get('/', async function (req, res) {
+    const aplog = await startAPLog(req)
     let resource = req.query.resource;
     console.log("WEBFINGER REQ!!!", resource)
     if (!resource || !resource.includes('acct:')) {
@@ -13,11 +15,13 @@ router.get('/', async function (req, res) {
         let account = resource.replace('acct:','');
         const parts = account.split("@");
         loadWebfingerByUsername(parts[0], parts[1])
-        .then((data) => {
+        .then(async (data) => {
+            await endAPLog(aplog, data)
             res.json(data);
         })
-        .catch((err) => {
+        .catch(async(err) => {
             console.error(err)
+            await endAPLog(aplog, err)
             res.status(err.statuscode).send(err.msg);
         })
     }

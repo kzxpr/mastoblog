@@ -89,6 +89,11 @@ router.get("/:username/messages/:messageid", async(req, res) => {
     }    
 })
 
+router.post("/:username/outbox", async (req, res) => {
+    console.log("TRIGGER post on /outbox", req.body)
+    res.send("OK")
+})
+
 router.get(["/:username/outbox"], async(req, res) => {
     const aplog = await startAPLog(req)
     const { username } = req.params;
@@ -103,13 +108,13 @@ router.get(["/:username/outbox"], async(req, res) => {
             "first": "https://"+domain+"/u/"+username+"/outbox?page=true"
         })
     }else{*/
-        console.log("PAGE")
         const user_id = await knex("apaccounts").where("username", "=", username).select("id").first().then((d) => { return d.id }).catch((e) => { res.sendStatus(500)})
         const messages = await knex("apmessages").where("attributedTo", user_id)
         .then((messages) => {
             var output = new Array();
             for(let message of messages){
                 output.push(makeMessage(username, domain, message.guid, message.publishedAt, message.content))
+                //output.push(wrapInCreate(makeMessage(username, domain, message.guid, message.publishedAt, message.content), username, domain, ""))
             }
             return output;
         })
@@ -180,7 +185,9 @@ router.get("/:username/statuses/:messageid", async (req, res) => {
             //console.log("M", message)
             if(message){
                 const msg = makeMessage(username, domain, message.guid, message.publishedAt, message.content);
-                //console.log("MSG", msg)
+                
+                /* IT SEEMS LIKE THIS SHOULD *NOT* BE WRAPPED */
+
                 await endAPLog(aplog, msg)
                 res.json(msg)
             }else{
@@ -193,6 +200,11 @@ router.get("/:username/statuses/:messageid", async (req, res) => {
             await endAPLog(aplog, e, 500)
             res.sendStatus(500)
         })
+})
+
+router.get("/:username/inbox", async(req, res) => {
+    console.log("TRIGGER get /inbox")
+    res.send("ok")
 })
 
 router.post('/:username/inbox', async function (req, res) {

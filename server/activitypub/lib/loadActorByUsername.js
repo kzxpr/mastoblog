@@ -30,7 +30,7 @@ async function loadActorByUsername(username, domain){
                 tempActor["type"] = "Person";
                 tempActor["preferredUsername"] = preferredUsername;
                 tempActor["discoverable"] = true;
-                tempActor["inbox"] = "https://"+domain+"/"+username+"/inbox";
+                tempActor["inbox"] = "https://"+domain+"/u/"+username+"/inbox";
                 //tempActor["inbox"] = "https://"+domain+"/api/inbox";
                 tempActor["outbox"] = "https://"+domain+"/u/"+username+"/outbox";
                 tempActor["icon"] = {
