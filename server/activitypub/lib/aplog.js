@@ -2,7 +2,7 @@ const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 
 async function startAPLog(req){
-    /*const ip = req.ip;
+    const ip = req.ip;
     //const params = JSON.stringify(req.params)
     const body = JSON.stringify(req.body)
     //const query = JSON.stringify(req.query)
@@ -24,11 +24,11 @@ async function startAPLog(req){
             console.error("ERROR logging AP request", e)
             reject(e)
         })
-    });*/
+    });
 }
 
 async function endAPLog(log_id, response, statuscode = 200){
-    /*const resp = JSON.stringify(response)
+    const resp = JSON.stringify(response)
     await knex("aprequests").update({
         response: resp, statuscode
     }).where("id", "=", log_id)
@@ -37,7 +37,7 @@ async function endAPLog(log_id, response, statuscode = 200){
     })
     .catch((e) => {
         console.error("ERROR logging AP end", e)
-    })*/
+    })
 }
 
 module.exports = { startAPLog, endAPLog }

@@ -95,11 +95,7 @@ app.get("/ap/admin", (req, res) => {
     res.sendFile(path.join(__dirname, "server", "activitypub", "admin.html"))
 })
 
-app.get("/public/007.png", (req, res) => {
-    //console.log("0000000000000007")
-    res.sendFile(path.join(__dirname, "public", "007.png"))
-})
-//app.use('/public', express.static(__dirname + '/public'));
+app.use('/public', express.static(__dirname + '/public'));
 
 function fillWithZero(str, len){
     var countstr = str.toString();
@@ -183,7 +179,7 @@ app.post("/followme", async (req, res) => {
 
 app.get(["/what"], async (req, res) => {
     const siteinfo = await getSiteInfo();
-    const text = "<h2>What?</h2>Hvad er <a href='https://joinmastodon.org/' target='_new'>Mastodon</a>?";
+    const text = "<h2>What?</h2>Read more about <a href='https://joinmastodon.org/' target='_new'>Mastodon</a>.<h2>How to follow this site?</h2>Once you have found an instance you trust, and have registered write the name of your instance above (like www.mastodon.social - without 'www') and press 'Follow' to be redirected.";
     res.render("text", { ...siteinfo, text });
 })
 

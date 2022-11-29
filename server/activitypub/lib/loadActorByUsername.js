@@ -33,11 +33,17 @@ async function loadActorByUsername(username, domain){
                 tempActor["inbox"] = "https://"+domain+"/u/"+username+"/inbox";
                 //tempActor["inbox"] = "https://"+domain+"/api/inbox";
                 tempActor["outbox"] = "https://"+domain+"/u/"+username+"/outbox";
-                tempActor["icon"] = {
-                    "type": "Image",
-                    "mediaType": "image/png",
-                    "url": "https://"+domain+"/public/"+result.icon+".png"
-                };
+                tempActor["icon"] = {};
+                tempActor["icon"].type = "Image";
+                if(!result.icon){
+                    tempActor["icon"].mediaType = "image/png";
+                    tempActor["icon"].url = "https://"+domain+"/public/icon128.png"
+                }else{
+                    if(result.icon.substr(-4)==".png"){
+                        tempActor["icon"].mediaType = "image/png";
+                        tempActor["icon"].url = "https://"+domain+"/public/"+result.icon+".png"
+                    }
+                }
                 tempActor["followers"] = "https://"+domain+"/u/"+username+"/followers"
                 var attachment = new Array();
                 attachment.push({
