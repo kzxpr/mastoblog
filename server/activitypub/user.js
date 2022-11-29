@@ -226,6 +226,7 @@ router.post('/:username/inbox', async function (req, res) {
 
         await knex("apaccounts").where("username", "=", local_username).first()
         .then(async(account) => {
+            console.log("Account", account)
             if(account){
                 user_id = account.id
                 if(reqtype === 'Follow') {  
