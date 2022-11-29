@@ -1,5 +1,10 @@
 <html>
     <head>
+        <meta charset="UTF-8">
+        <meta name="description" content="{{sitetitle}} - {{sitesubtitle}}. Made with MastoBlog" />
+        <meta property="og:image" content="/public/logo128.png" />
+        <meta property="og:description" content="{{sitetitle}} - {{sitesubtitle}}. Made with MastoBlog" />
+        <meta property="og:title" content="{{#if pagetitle}}{{pagetitle}} //{{/if}}{{sitetitle}}" />
         <title>{{#if pagetitle}}{{pagetitle}} //{{/if}}{{sitetitle}}</title>
         <link href="/public/main.css" rel="stylesheet">
     </head>
