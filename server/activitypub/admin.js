@@ -7,7 +7,7 @@ const knex = require("knex")(db)
 
 const { createActor } = require("./lib/createActor")
 const { createNote, createPage, createArticle } = require("./lib/createNote")
-const { wrapInCreate } = require("./lib/wrapInCreate")
+const { wrapInCreate, wrapInUpdate } = require("./lib/wrapInCreate")
 const { signAndSend } = require("./lib/signAndSend")
 const { makeMessage, makePage, makeArticle } = require("./lib/makeMessage")
 
@@ -53,9 +53,6 @@ router.post("/createPage", async (req, res) => {
             console.error(e)
             res.sendStatus(500)
         })
-        //await sendNote(message, acct, domain, row.follower)
-        //.then(())
-        
     })
     .catch((e) => {
         console.error(e)
@@ -189,5 +186,32 @@ router.get('/createActor', async function (req, res) {
             res.status(e.statusCode).json({ msg: e.msg })
         })
 });
+
+router.post("/updateProfile", async (req, res) => {
+    const { username, cc } = req.body;
+    let domain = req.app.get('domain');
+    
+    var followers = new Array();
+    if(cc){
+        console.log("Using follower", cc)
+        followers.push(cc)
+    }
+
+    const wrapped = wrapInUpdate("https://"+domain+"/u/"+username, "https://"+domain+"/u/"+username)
+    console.log("Message wrapped", wrapped);
+    for(let follower of followers){
+        let inbox = follower+'/inbox';
+        let myURL = new URL(follower);
+        let targetDomain = myURL.hostname;
+        await signAndSend(wrapped, username, domain, targetDomain, inbox)
+            .then((data) => {
+                console.log("SEND NOTE RESPONSE",data)
+                res.send("OK")
+            })
+            .catch((err) => {
+                return {err}
+            })
+    }
+})
 
 module.exports = router;

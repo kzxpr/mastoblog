@@ -24,8 +24,8 @@ router.get('/:username', async function (req, res) {
     let name = req.params.username;
     let domain = req.app.get('domain');
     if (!name) {
-        await endAPLog(aplog, "Username not found", 400)
-        return res.status(400).send('Bad request.');
+        await endAPLog(aplog, "Username not found", 404)
+        return res.status(404);
     } else {
         loadActorByUsername(name, domain)
         .then(async(data) => {
@@ -33,7 +33,7 @@ router.get('/:username', async function (req, res) {
             res.json(data);
         })
         .catch(async(err) => {
-            await endAPLog(aplog, err, err.statusCode)
+            await endAPLog(aplog, err.msg, err.statuscode)
             res.status(err.statuscode).send("Error at /u/"+name+": "+err.msg)
         })
     }
