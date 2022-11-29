@@ -228,7 +228,7 @@ router.post('/:username/inbox', async function (req, res) {
         .then(async(account) => {
             console.log("Account", account)
             if(account){
-                user_id = account.id
+                const user_id = account.id
                 if(reqtype === 'Follow') {  
                     await sendAcceptMessage(req.body, local_username, domain, targetDomain);
                     const follower = req.body.actor;
