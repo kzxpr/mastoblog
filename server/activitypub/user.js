@@ -234,12 +234,13 @@ router.post('/:username/inbox', async function (req, res) {
                     await endAPLog(aplog, { local_username, domain, targetDomain })
                     await addFollower(local_username, follower)
                     await sendLatestMessages(follower, user_id, local_username, domain)
-                    .then((d) => {
-                        console.log("Pinned messages were sent to new follower: "+follower)
+                    .then(async(d) => {
+                        await endAPLog(aplog, "Pinned messages were sent to new follower: "+follower)
+                        res.sendStatus(200)
                     })
                     .catch(async(e) => {
                         console.error("ERROR in sendLatestMessages", e)
-                        await endAPLog(aplog, "Received note", 500)
+                        await endAPLog(aplog, "ERROR in sendLatestMessages", 500)
                         res.sendStatus(500)
                     })
                 }else{
