@@ -245,7 +245,7 @@ router.post('/:username/inbox', async function (req, res) {
                         res.sendStatus(500)
                     })
                 }else{
-                    await endAPLog(aplog, "Not found", 404)
+                    await endAPLog(aplog, "Not found reqtype", 404)
                     res.sendStatus(404)
                 }
             }else{
@@ -265,8 +265,8 @@ router.post('/:username/inbox', async function (req, res) {
                 res.sendStatus(201)
             }
         }else{
-            await endAPLog(aplog, "Not found", 404)
-            res.sendStatus(404)
+            await endAPLog(aplog, "REQ type is not recognized...", 500)
+            res.sendStatus(500)
         }
     }
     //console.log("**************************************")
