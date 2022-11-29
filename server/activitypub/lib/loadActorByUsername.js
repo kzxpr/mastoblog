@@ -49,7 +49,7 @@ async function loadActorByUsername(username, domain){
                 attachment.push({
                     "type": "PropertyValue",
                     "name": "Homepage",
-                    "value": "<a href=\""+result.homepage+"\" rel=\"me nofollow noopener noreferrer\" target=\"_blank\"><span class=\"\">"+result.homepage+"</span></a>"
+                    "value": "<a href='"+result.homepage+"' rel='me nofollow noopener noreferrer' target='_blank'>"+result.homepage+"</a>"
                   })
                 tempActor["attachment"] = attachment
                 tempActor["publicKey"] = {};
