@@ -221,6 +221,7 @@ router.post('/:username/inbox', async function (req, res) {
     
     if (typeof req.body.object === 'string'){
         let local_username = req.body.object.replace(`https://${domain}/u/`,'');
+        console.log("LOOKUP FOLLOW username",local_username)
         //const username = name;//+"@"+domain;
 
         await knex("apaccounts").where("username", "=", local_username).first()
@@ -231,7 +232,7 @@ router.post('/:username/inbox', async function (req, res) {
                     await sendAcceptMessage(req.body, local_username, domain, targetDomain);
                     const follower = req.body.actor;
                     //console.log("FOLLOW MED",req.body, local_username, domain, targetDomain)
-                    await endAPLog(aplog, { local_username, domain, targetDomain })
+                    //await endAPLog(aplog, { local_username, domain, targetDomain })
                     await addFollower(local_username, follower)
                     await sendLatestMessages(follower, user_id, local_username, domain)
                     .then(async(d) => {
