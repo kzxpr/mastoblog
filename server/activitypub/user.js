@@ -221,19 +221,16 @@ router.post('/:username/inbox', async function (req, res) {
     
     if (typeof req.body.object === 'string'){
         let local_username = req.body.object.replace(`https://${domain}/u/`,'');
-        console.log("LOOKUP FOLLOW username",local_username)
         //const username = name;//+"@"+domain;
 
         await knex("apaccounts").where("username", "=", local_username).first()
         .then(async(account) => {
-            console.log("Account", account)
             if(account){
                 const user_id = account.id
                 if(reqtype === 'Follow') {  
                     await sendAcceptMessage(req.body, local_username, domain, targetDomain);
                     const follower = req.body.actor;
                     //console.log("FOLLOW MED",req.body, local_username, domain, targetDomain)
-                    //await endAPLog(aplog, { local_username, domain, targetDomain })
                     await addFollower(local_username, follower)
                     await sendLatestMessages(follower, user_id, local_username, domain)
                     .then(async(d) => {
@@ -246,24 +243,24 @@ router.post('/:username/inbox', async function (req, res) {
                         res.sendStatus(500)
                     })
                 }else{
-                    await endAPLog(aplog, "Not found reqtype", 404)
-                    res.sendStatus(404)
+                    await endAPLog(aplog, "Not found reqtype", 500)
+                    res.sendStatus(500)
                 }
             }else{
-                res.sendStatus(500)
+                await endAPLog(aplog, "No user found for requested account", 404)
+                res.sendStatus(404)
             }
-            
         })
-
-        
     }else{
         if(reqtype === 'Create'){
             const objtype = req.body.object.type;
-            console.log("Objtype",objtype)
             if(objtype==="Note"){
                 console.log("I got a note saying",req.body.object.content)
                 await endAPLog(aplog, "Received note", 201)
                 res.sendStatus(201)
+            }else{
+                await endAPLog(aplog, "Received create, but object type wasn't recognized", 500)
+                res.sendStatus(500)
             }
         }else{
             await endAPLog(aplog, "REQ type is not recognized...", 500)
