@@ -4,7 +4,7 @@ const knex = require("knex")(db)
 async function loadActorByUsername(username, domain){
     console.log("\x1b[33m%s\x1b[0m", "PROFILE", "for", username)
     return new Promise(async (resolve, reject) => {
-        await knex("apaccounts").where("username", "=", username).select("pubkey").first()
+        await knex("apaccounts").where("username", "=", username).first()
         .then((result) => {
             if (result === undefined) {
                 reject({statuscode: 404, msg: "No record found for "+username})
