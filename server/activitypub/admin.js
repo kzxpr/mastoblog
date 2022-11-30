@@ -110,17 +110,27 @@ router.post("/createArticle", async function(req, res){
     })
 })
 
-router.post('/createPost', async function (req, res) {
+router.post('/createNote', async function (req, res) {
     // pass in a name for an account, if the account doesn't exist, create it!
-    const { username, content, cc, link } = req.body;
+    const { username, content, cc, link, use_follower } = req.body;
+    console.log("USE FOLLOWERS", use_follower)
     let domain = req.app.get('domain');
     const type = "Note";
-    console.log("createPost:", username, content)
+    console.log("createNote:", username, content)
     var followers = new Array();
+    if(use_follower=="on"){
+        await knex("apfollowers").where("username", "=", username)
+        .then((db_followers) => {
+            for(let db_follower of db_followers){
+                console.log(db_follower);
+                followers.push(db_follower.follower);
+            }
+        })
+    }
     if(cc){
-        console.log("Using follower", cc)
         followers.push(cc)
     }
+    console.log("Using followers", followers)
     const note_in_db = await createNote(content, username, domain, link)
     .then(async (note_id) => {
         console.log("A NOTE",note_id[0])

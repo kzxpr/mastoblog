@@ -5,13 +5,14 @@
         <input type="text" name="username" placeholder="username">
         <input type="submit" value="Create actor">
     </form>
-    <h2>Create new post</h2>
-    <form action="/ap/admin/api/createPost" method="post">
+    <h2>Create new note</h2>
+    <form action="/ap/admin/api/createNote" method="post">
         <input type="text" name="username" placeholder="username"><br>
         <input type="text" name="link" placeholder="https://"><br>
         <textarea name="content"></textarea><br>
         <input type="text" name="cc" placeholder="cc"><br>
-        <input type="submit" value="Create post">
+        <input type="checkbox" name="use_follower"><br>
+        <input type="submit" value="Create note">
     </form>
     <h2>Create new page</h2>
     <form action="/ap/admin/api/createPage" method="post">
