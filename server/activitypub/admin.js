@@ -215,7 +215,7 @@ router.post("/updateProfile", async (req, res) => {
 })
 
 router.post("/deleteObject", async (req, res) => {
-    const { id, cc } = req.body;
+    const { username, id, cc } = req.body;
     let domain = req.app.get('domain');
     
     var followers = new Array();
