@@ -225,14 +225,23 @@ router.post("/updateProfile", async (req, res) => {
 })
 
 router.post("/deleteObject", async (req, res) => {
-    const { username, id, cc } = req.body;
+    const { username, id, cc, use_follower } = req.body;
     let domain = req.app.get('domain');
     
     var followers = new Array();
+    if(use_follower=="on"){
+        await knex("apfollowers").where("username", "=", username)
+        .then((db_followers) => {
+            for(let db_follower of db_followers){
+                console.log(db_follower);
+                followers.push(db_follower.follower);
+            }
+        })
+    }
     if(cc){
-        console.log("Using follower", cc)
         followers.push(cc)
     }
+    console.log("Using followers", followers)
 
     const wrapped = wrapInDelete(id, "https://"+domain+"/u/"+username)
     console.log("Delete wrapped", wrapped);
