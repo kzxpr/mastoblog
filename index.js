@@ -70,6 +70,9 @@ app.use("/ap/admin/api", ap_admin)
 app.use("/.well-known/webfinger/", cors(), ap_webfinger)
 app.use("/u", cors(), ap_user)
 
+const tester_routes = require("./server/activitypub/tester")
+app.use("/ap/admin/tester", tester_routes);
+
 app.get("/ap/admin/logs", async(req, res) => {
     await knex("aprequests").where("timestamp", ">", knex.raw("now() - interval 24 hour")).orderBy("timestamp", "desc")
     .then((logs) => {
@@ -97,47 +100,25 @@ app.get("/ap/admin", (req, res) => {
 
 app.use('/public', express.static(__dirname + '/public'));
 
-function fillWithZero(str, len){
-    var countstr = str.toString();
-    return "0".repeat(len - countstr.length)+str;
-}
-
 /* HBS */
 const exphbs  = require('express-handlebars');
 const config = {
 	extname: '.hbs',
 };
 const hbs = exphbs.create(config);
-hbs.handlebars.registerHelper('neq', function(arg1, arg2, options) {
-    return (arg1 != arg2) ? true : false;
-});
-hbs.handlebars.registerHelper('eq', function(arg1, arg2, options) {
-    return (arg1 == arg2) ? true : false;
-});
-hbs.handlebars.registerHelper('prettydatetime', function (datetime) {
-    if(datetime){
-        const my_date = new Date(datetime)
-        return my_date.getDate() + "/" + (my_date.getMonth() + 1) + "-" + my_date.getFullYear() + " " + my_date.getHours() + ":" + fillWithZero(my_date.getMinutes(), 2) + ":" + fillWithZero(my_date.getSeconds(), 2);
-    }else{
-        return;
-    }
-})
-hbs.handlebars.registerHelper('gt', function(arg1, arg2, options) {
-    return (arg1 > arg2) ? true : false;
-});
 
-hbs.handlebars.registerHelper('lt', function(arg1, arg2, options) {
-    return (arg1 < arg2) ? true : false;
-});
-hbs.handlebars.registerHelper('count', function(arr){
-    if(arr){
-        return arr.length;
-    }else{
-        return null;
-    }
-});
+const funcs = require("./funcs")
+for(let func in funcs){
+    hbs.handlebars.registerHelper(func, funcs[func]);
+}
+
 app.engine("hbs", hbs.engine);
 app.set("view engine", "hbs");
+
+/*********************/
+/* LET THE FUN BEGIN */
+/*********************/
+
 
 async function getSiteInfo(){
     const sitetitle = await getConfigByKey("sitetitle");

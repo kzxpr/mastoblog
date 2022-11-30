@@ -214,4 +214,8 @@ router.post("/updateProfile", async (req, res) => {
     }
 })
 
+router.get("/what", (req, res) => {
+    res.send("AUTH")
+})
+
 module.exports = router;

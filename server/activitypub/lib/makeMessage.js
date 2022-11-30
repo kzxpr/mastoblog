@@ -69,7 +69,6 @@ function makeArticle(username, domain, guid, publishedAt, content, name, url = "
             "https://"+domain+"/u/"+username+"/followers"
         ],
         "url": url_link,
-        "name": name,
         "content": content,
         "contentMap": {
             "en": content
