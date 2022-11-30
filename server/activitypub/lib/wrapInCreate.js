@@ -66,7 +66,7 @@ function wrapInDelete(object, actor, domain = "", follower = [], guid = ""){
     
     let deleteMessage = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
-      'type': 'Update',
+      'type': 'Delete',
       'actor': actor,
       'object': object
     };
