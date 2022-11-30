@@ -7,7 +7,7 @@ const knex = require("knex")(db)
 
 const { createActor } = require("./lib/createActor")
 const { createNote, createPage, createArticle } = require("./lib/createNote")
-const { wrapInCreate, wrapInUpdate } = require("./lib/wrapInCreate")
+const { wrapInCreate, wrapInUpdate, wrapInDelete } = require("./lib/wrapInCreate")
 const { signAndSend } = require("./lib/signAndSend")
 const { makeMessage, makePage, makeArticle } = require("./lib/makeMessage")
 
@@ -206,6 +206,33 @@ router.post("/updateProfile", async (req, res) => {
         await signAndSend(wrapped, username, domain, targetDomain, inbox)
             .then((data) => {
                 console.log("SEND NOTE RESPONSE",data)
+                res.send("OK")
+            })
+            .catch((err) => {
+                return {err}
+            })
+    }
+})
+
+router.post("/deleteObject", async (req, res) => {
+    const { id, cc } = req.body;
+    let domain = req.app.get('domain');
+    
+    var followers = new Array();
+    if(cc){
+        console.log("Using follower", cc)
+        followers.push(cc)
+    }
+
+    const wrapped = wrapInDelete(id, "https://"+domain+"/u/"+username)
+    console.log("Delete wrapped", wrapped);
+    for(let follower of followers){
+        let inbox = follower+'/inbox';
+        let myURL = new URL(follower);
+        let targetDomain = myURL.hostname;
+        await signAndSend(wrapped, username, domain, targetDomain, inbox)
+            .then((data) => {
+                console.log("SEND DELETE",data)
                 res.send("OK")
             })
             .catch((err) => {

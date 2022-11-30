@@ -51,4 +51,27 @@ function wrapInUpdate(object, actor, domain = "", follower = [], guid = ""){
     return updateMessage;
 }
 
-module.exports = { wrapInCreate, wrapInUpdate }
+function wrapInDelete(object, actor, domain = "", follower = [], guid = ""){
+  //  actor | object | target | result | origin | instrument 
+  /*var guidCreate;
+  if(obj.id){
+    //const cryptkey = crypto.randomBytes(16).toString('hex');;
+    guidCreate = obj.id + "/create"
+  }else{
+    guidCreate = guid;
+  }
+  const dd = new Date();*/
+  
+  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
+    
+    let deleteMessage = {
+      '@context': ['https://www.w3.org/ns/activitystreams'],
+      'type': 'Update',
+      'actor': actor,
+      'object': object
+    };
+    
+    return deleteMessage;
+}
+
+module.exports = { wrapInCreate, wrapInUpdate, wrapInDelete }
