@@ -82,8 +82,9 @@ router.get("/:username/messages/:messageid", async(req, res) => {
             res.sendStatus(500)
         })
         let m = makeMessage(username, domain, message.guid, message.publishedAt, message.content);
-        await endAPLog(aplog, m)
-        res.send(m);
+        const wrapped = wrapInCreate(m, "@"+username+"@"+domain, domain, [], message.guid)
+        await endAPLog(aplog, wrapped)
+        res.send(wrapped);
     }    
 })
 

@@ -1,4 +1,5 @@
-function makeMessage(username, domain, guid, publishedAt, content, url = ""){
+function makeMessage(username, domain, guid, params){
+    const { published, content, url } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -9,7 +10,7 @@ function makeMessage(username, domain, guid, publishedAt, content, url = ""){
         "@context": ["https://www.w3.org/ns/activitystreams"],
         "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
         "type": "Note",
-        "published": publishedAt,
+        "published": published,
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": [
             "https://www.w3.org/ns/activitystreams#Public"
@@ -25,7 +26,34 @@ function makeMessage(username, domain, guid, publishedAt, content, url = ""){
     }
 }
 
-function makePage(username, domain, guid, publishedAt, content, url = ""){
+function makeNote(username, domain, guid, params){
+    const { published, name, content, to, cc, url, summary, inReplyTo } = params;
+    var url_link;
+    if(!url){
+        url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    }else{
+        url_link = url;
+    }
+    var obj = {};
+    obj["@context"] = ["https://www.w3.org/ns/activitystreams"]
+    obj["id"] = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    obj["type"] = "Note"
+    obj["published"] = published;
+    obj["attributedTo"] = "https://"+domain+"/u/"+username;
+    obj["to"] = [ to ];
+    obj["cc"] = [ cc ];
+    obj["url"] = url_link;
+    if(inReplyTo){
+        obj["inReplyTo"] = inReplyTo;
+    }
+    obj["summary"] = summary;
+    obj["content"] = content;
+    obj["contentMap"] = { "en": summary };
+    return obj;
+}
+
+function makePage(username, domain, guid, params){
+    const { published, content, url } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -36,7 +64,7 @@ function makePage(username, domain, guid, publishedAt, content, url = ""){
         "@context": ["https://www.w3.org/ns/activitystreams"],
         "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
         "type": "Page",
-        "published": publishedAt,
+        "published": published,
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": [
             "https://www.w3.org/ns/activitystreams#Public"
@@ -49,7 +77,8 @@ function makePage(username, domain, guid, publishedAt, content, url = ""){
     }
 }
 
-function makeArticle(username, domain, guid, publishedAt, content, name, url = ""){
+function makeArticle(username, domain, guid, params){
+    const {published, content, name, url} = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -60,7 +89,7 @@ function makeArticle(username, domain, guid, publishedAt, content, name, url = "
         "@context": ["https://www.w3.org/ns/activitystreams"],
         "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
         "type": "Article",
-        "published": publishedAt,
+        "published": published,
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": [
             "https://www.w3.org/ns/activitystreams#Public"
@@ -77,4 +106,32 @@ function makeArticle(username, domain, guid, publishedAt, content, name, url = "
     }
 }
 
-module.exports = { makeMessage, makePage, makeArticle }
+function makeEvent(username, domain, guid, params){
+    const { startTime, endTime, name, published, url, summary, to, cc } = params;
+    var url_link;
+    if(!url){
+        url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    }else{
+        url_link = url;
+    }
+    return {
+        "@context": ["https://www.w3.org/ns/activitystreams"],
+        "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
+        "type": "Event",
+        "published": published,
+        "startTime": startTime,
+        "endTime": endTime,
+        "attributedTo": "https://"+domain+"/u/"+username,
+        "to": [
+            to
+        ],
+        "cc": [
+            cc
+        ],
+        "url": url_link,
+        "name": name,
+        "summary": summary
+    }
+}
+
+module.exports = { makeMessage, makePage, makeArticle, makeEvent, makeNote }

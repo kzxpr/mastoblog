@@ -13,8 +13,9 @@ async function loadActorByUsername(username, domain){
                 
                 // THIS IS DESCRIBED FOR MASTODON AS "PROFILE":
                 // SEE https://docs.joinmastodon.org/spec/activitypub/#profile
+                //
+                // See example here: https://www.w3.org/TR/activitypub/#liked
 
-                const preferredUsername = result.displayname ? result.displayname : username;
                 const context_featured = {
                     "toot": "http://joinmastodon.org/ns#",
                     "featured": {
@@ -28,11 +29,24 @@ async function loadActorByUsername(username, domain){
                 tempActor["summary"] = result.summary;
                 tempActor["url"] = "https://"+domain+"/?user="+username;
                 tempActor["type"] = "Person";
-                tempActor["preferredUsername"] = preferredUsername;
+                tempActor["preferredUsername"] = username+"@"+domain;
                 tempActor["discoverable"] = true;
+
+                /* LINKS */
+                tempActor["followers"] = "https://"+domain+"/u/"+username+"/followers"
+                tempActor["following"] = "https://"+domain+"/u/"+username+"/following"
+                tempActor["featured"] = "https://"+domain+"/u/"+username+"/collections/featured"
+                tempActor["liked"] = "https://"+domain+"/u/"+username+"/liked";
                 tempActor["inbox"] = "https://"+domain+"/u/"+username+"/inbox";
-                //tempActor["inbox"] = "https://"+domain+"/api/inbox";
                 tempActor["outbox"] = "https://"+domain+"/u/"+username+"/outbox";
+                // Added this followers URI for Pleroma compatibility, see https://github.com/dariusk/rss-to-activitypub/issues/11#issuecomment-471390881
+                // New Actors should have this followers URI but in case of migration from an old version this will add it in on the fly
+                if (tempActor.followers === undefined) {
+                    tempActor.followers = `https://${domain}/u/${username}/followers`;
+                }
+
+
+                /* EXTENDED */
                 tempActor["icon"] = {};
                 tempActor["icon"].type = "Image";
                 if(!result.icon){
@@ -44,7 +58,7 @@ async function loadActorByUsername(username, domain){
                         tempActor["icon"].url = "https://"+domain+"/public/"+result.icon+".png"
                     }
                 }
-                tempActor["followers"] = "https://"+domain+"/u/"+username+"/followers"
+                
                 var attachment = new Array();
                 attachment.push({
                     "type": "PropertyValue",
@@ -56,13 +70,8 @@ async function loadActorByUsername(username, domain){
                 tempActor["publicKey"].id = "https://"+domain+"/u/"+username+"#main-key";
                 tempActor["publicKey"].owner = "https://"+domain+"/u/"+username;
                 tempActor["publicKey"].publicKeyPem = result.pubkey;
-                tempActor["featured"] = "https://"+domain+"/u/"+username+"/collections/featured"
                 
-                // Added this followers URI for Pleroma compatibility, see https://github.com/dariusk/rss-to-activitypub/issues/11#issuecomment-471390881
-                // New Actors should have this followers URI but in case of migration from an old version this will add it in on the fly
-                if (tempActor.followers === undefined) {
-                    tempActor.followers = `https://${domain}/u/${username}/followers`;
-                }
+                
                 resolve(tempActor);
             }
         })

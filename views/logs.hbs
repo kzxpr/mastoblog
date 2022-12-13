@@ -22,12 +22,12 @@
                     {{#if (eq this.body "{}")}}
                         <i>empty</i>
                     {{else}}
-                        <a href="/ap/admin/logs/{{this.id}}" title="{{this.body}}">{body}</a>
+                        <a href="/ap/admin/logs/{{this.id}}" title="{{prettyJSON this.body}}">{body}</a>
                     {{/if}}
                 </td>
                 <td>
                     {{#if this.response}}
-                        <a href="/ap/admin/logs/{{this.id}}" title="{{this.response}}">{response}</a>
+                        <a href="/ap/admin/logs/{{this.id}}" title="{{prettyJSON this.response}}">{response}</a>
                     {{else}}
                         <i>empty</i>
                     {{/if}}

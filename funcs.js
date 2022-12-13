@@ -40,4 +40,8 @@ function count(arr){
     }
 }
 
-module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero }
+function prettyJSON(src){
+    return JSON.stringify(JSON.parse(src), undefined, 4)
+}
+
+module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero, prettyJSON }

@@ -74,7 +74,7 @@ const tester_routes = require("./server/activitypub/tester")
 app.use("/ap/admin/tester", tester_routes);
 
 app.get("/ap/admin/logs", async(req, res) => {
-    await knex("aprequests").where("timestamp", ">", knex.raw("now() - interval 24 hour")).orderBy("timestamp", "desc")
+    await knex("aprequests").where("timestamp", ">", knex.raw("now() - interval 72 hour")).orderBy("timestamp", "desc")
     .then((logs) => {
         res.render("logs", { logs })
     })

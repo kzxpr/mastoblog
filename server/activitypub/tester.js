@@ -1,57 +1,260 @@
 const express = require('express'),
       router = express.Router();
 
+const db = require("./../../knexfile")
+const knex = require("knex")(db)
+      
 const { createActor } = require("./lib/createActor")
 const { createNote, createPage, createArticle } = require("./lib/createNote")
-const { wrapInCreate, wrapInUpdate } = require("./lib/wrapInCreate")
+const { wrapInCreate, wrapInUpdate, wrapInDelete, wrapInFlag, wrapInUndo, wrapInAnnounce, wrapInFollow, wrapInLike } = require("./lib/wrapInCreate")
 const { signAndSend } = require("./lib/signAndSend")
-const { makeMessage, makePage, makeArticle } = require("./lib/makeMessage")
+const { makeMessage, makePage, makeArticle, makeEvent, makeNote } = require("./lib/makeMessage")
 
-router.get("/", (req, res) => {
-    res.send("Hi, let's test stuff!")
+const tester_root = "/ap/admin/tester";
+
+function header(){
+    var body = "<h1>Let's test ActivityPub</h1>"
+    body += "LIKE (= favourite): Like > Id > Message as 'id' + author in 'to'<br>"
+    body += "REPLY: Create > Note > Use 'inReplyTo' + author in 'to'<br>"
+    body += "FOLLOW: Follow > Id > Account as 'id' + author in 'to'<br>"
+    body += "ANNOUNCE (= boost): Announce > Id > Message as 'id' + author in 'to'<br>"
+    body += "UPDATE PROFILE: Update it in database, then Update > Id > Profile as 'id'<br>"
+    body += "UPDATE POST: Update it in database, then Update > Id > Message as 'id'<br>"
+    body += "<hr>"
+    return body;
+}
+
+function prettyTest(obj){
+    return "<pre style='border: 1px solid #ccc; margin: 10px; padding: 10px;'>"+JSON.stringify(obj, undefined, 4)+"</pre>";
+}
+
+router.get("/", async(req, res) => {
+    var body = header();
+    body += "Who are you?!<br>"
+    body += "<ul>"
+    await knex("apaccounts").then((users) => {
+        for(let user of users){
+            body += "<li><a href='"+tester_root+"/"+user.username+"'>"+user.username+"</a></li>"
+        }
+    })
+    body += "</ul>"
+    res.send(body)
 })
 
 router.get("/:username", (req, res) => {
     const { username } = req.params;
-    var body = "Hi "+username+".<br>";
+    var body = header();
+    body += "Hi "+username+".<br>";
     body += "What should we do?"
-    const options = ["create", "update", "undo"]
+    const options = ["Create", "Update", "Undo", "Delete", "Follow", "Like", "Announce", "Flag"]
     body += "<ul>"
     for(let option of options){
-        body += "<li><a href='/ap/admin/tester/"+username+"/"+option+"'>"+option+"</a></li>"
+        body += "<li><a href='"+tester_root+"/"+username+"/"+option+"'>"+option+"</a></li>"
     }
     body += "</ul>"
     res.send(body)
 })
+
+function wrapper(){
+    return;
+}
 
 router.get("/:username/:activity", (req, res) => {
     const domain = req.app.get('domain');
     const { username, activity } = req.params;
-    var body = "Hi "+req.params.username+"<br>So you want to "+req.params.activity+" an activity?<br>";
+    const guid = "xxxxxxxxxxxxxx";
+    const ref_url = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    var body = header();
+    body += "Hi "+req.params.username+"<br>So you want to <b>"+req.params.activity+"</b> an activity?<br>";
     body += "Which object would you like to use?"
-    const options = ["note", "article", "question", "event", "image"]
+    const options = ["Note", "Question", "Article", "Page", "Event", "Image", "Audio", "Video", "Id"]
     body += "<ul>"
     for(let option of options){
-        body += "<li><a href='/ap/admin/tester/"+username+"/"+activity+"/"+option+"'>"+option+"</a></li>"
+        body += "<li><a href='"+tester_root+"/"+username+"/"+activity+"/"+option+"'>"+option+"</a></li>"
     }
     body += "</ul>"
-    body += "<pre style='border: 1px solid #ccc; margin: 10px; padding: 10px;'>"+JSON.stringify(wrapInCreate({}, username, domain, []), undefined, 4)+"</pre>"
+    const preview = wrap(activity, {}, { username, domain, ref_url });
+    body += prettyTest(preview)
     res.send(body)
 })
 
-router.get("/:username/:activity/:object", (req, res) => {
-    const domain = req.app.get('domain');
-    const guid = 123456;
-    const dd = new Date();
-    const publishedAt = dd.toISOString();
-    const content = "LALALA";
-    const name = "NAME";
-    url = "https://lol.dk"
+function makeObject(object, params, body){
+    const { domain, username, guid, published } = params;
+    const stringobj = body.stringobj !== undefined ? body.stringobj : "https://"+domain+"/u/"+username+"/";
+    const content = body.content !== undefined ? body.content : "This is the content of the message <i>including</i> HTML"
+    const summary = body.summary !== undefined ? body.summary : "This is the summary text..."
+    const name = body.name !== undefined ? body.name : "This is name - no HTML here"
+    const url = body.url !== undefined ? body.url : "https://lol.dk";
+    const to = body.to !== undefined ? body.to : "https://www.w3.org/ns/activitystreams#Public"
+    const cc = body.cc !== undefined ? body.cc : "https://todon.eu/users/kzxpr"
+    const startTime = body.startTime !== undefined ? body.startTime : "2023-12-31T23:00:00-08:00";
+    const endTime = body.endTime !== undefined ? body.endTime : "2024-01-01T06:00:00-08:00";
+    const inReplyTo = body.inReplyTo !== undefined ? body.inReplyTo : "";
+    var body = "";
+    var hidden = "";
+    var obj;
+    attributedTo = "https://"+domain+"/u/"+username+"/";
+    body += "<table>"
+    body += "<tr><td colspan='3'><u>Common parameters</u></tr>"
+    body += "<tr><td width='120'>guid:<td> "+guid+"<td>(generated later)</tr>"
+    body += "<tr><td>attributed:<td> "+attributedTo+"<td></tr>"
+    body += "<tr><td>published:<td> "+published+"<td>(updates automatically)</tr>"
+    body += "<tr><td>to:<td> <input type='text' name='to' value='"+to+"' style='width: 100%; max-width: 300px;'><td>(url)</tr>";
+    body += "<tr><td>cc:<td> <input type='text' name='cc' value='"+cc+"' style='width: 100%; max-width: 300px;'><td>(url)</tr>";
+    body += "<tr><td>inReplyTo:<td> <input type='text' name='inReplyTo' value='"+inReplyTo+"' style='width: 100%; max-width: 300px;'><td>(url - if using this remember to include owner in 'to')</tr>";
+    //
+    hidden += "<input type='hidden' name='to' value='"+to+"'>";
+    hidden += "<input type='hidden' name='cc' value='"+cc+"'>";
+    hidden += "<input type='hidden' name='inReplyTo' value='"+inReplyTo+"'>";
+    body += "<tr><td colspan='3'><u>Special parameters</u></tr>"
+    body += "</table>"
+    if(object=="Id"){
+        body += "<label>string:</label> <input type='text' name='stringobj' value='"+stringobj+"' style='width: 100%; max-width: 300px;'> (url)<br>";
+        hidden += "<input type='hidden' name='stringobj' value='"+stringobj+"'>";
+        obj = stringobj;
+    }else if(object=="Note"){
+        //body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
+        body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
+        body += "<label>summary</label><input type='text' name='summary' value='"+summary+"'><br>"
+        //hidden += "<input type='hidden' name='name' value='"+name+"'>";
+        hidden += "<input type='hidden' name='content' value='"+content+"'>";
+        hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
+        obj = makeNote(username, domain, guid, { published, name, content, to, cc, url, summary, inReplyTo })
+    }else if(object=="Event"){
+        body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
+        //body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
+        body += "<label>summary</label><input type='text' name='summary' value='"+summary+"'><br>"
+        body += "<label>startTime</label><input type='text' name='startTime' value='"+startTime+"'><br>"
+        body += "<label>endTime</label><input type='text' name='endTime' value='"+endTime+"'><br>"
+        hidden += "<input type='hidden' name='name' value='"+name+"'>";
+        hidden += "<input type='hidden' name='startTime' value='"+startTime+"'>";
+        hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
+        //hidden += "<input type='hidden' name='content' value='"+content+"'>";
+        hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
+        obj = makeEvent(username, domain, guid, { published, name, content, to, cc, startTime, endTime, url, summary })
+    }else{
+        body += "<label>Content</label><input type='text' name='content' value='"+content+"'><br>"
+        hidden += "<input type='hidden' name='content' value='"+content+"'>";
+        obj = makeArticle(username, domain, guid, published, content, name, url)
+    }
+
+    return { form_append: body, hidden_append: hidden, obj }
+}
+
+function wrap(activity, obj, params){
+    const { username, domain, ref_url, to, cc } = params;
+    const actor = "https://"+domain+"/u/"+username;
+    switch(activity){
+        case 'Create': wrapped = wrapInCreate(obj, actor, domain, [], ref_url); break;
+        case 'Delete': wrapped = wrapInDelete(obj, actor, domain, [], { to, cc }); break;
+        case 'Update': wrapped = wrapInUpdate(obj, actor, domain, [], ref_url); break;
+        case 'Flag': wrapped = wrapInFlag(obj, actor, domain, [], ref_url); break;
+        case 'Undo': wrapped = wrapInUndo(obj, actor, domain, [], ref_url, { to, cc }); break;
+        case 'Announce': wrapped = wrapInAnnounce(obj, actor, domain, { to, cc }, ref_url); break;
+        case 'Follow': wrapped = wrapInFollow(obj, actor, domain, [], ref_url); break;
+        case 'Like': wrapped = wrapInLike(obj, actor, domain, [], ref_url); break;
+    }
+    return wrapped
+}
+
+router.all("/:username/:activity/:object", (req, res) => {
     const { username, activity, object } = req.params;
-    var body = "Hi "+req.params.username+"<br>So you want to "+req.params.activity+" an "+object+"?";
-    body += "<pre style='border: 1px solid #ccc; margin: 10px; padding: 10px;'>"+JSON.stringify(wrapInCreate(makeArticle(username, domain, guid, publishedAt, content, name, url = ""), username, domain, []), undefined, 4)+"</pre>"
+    const domain = req.app.get('domain');
+    
+    const guid = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    const dd = new Date();
+    const published = dd.toISOString();
+
+    const to = req.body.to !== undefined ? req.body.to : "";
+    const cc = req.body.cc !== undefined ? req.body.cc : "";
+
+    /* BODY AND STUFF */
+    var body = header();
+    body += "Hi "+username+"<br>So you want to "+activity+" an <b>"+object+"</b>?<br><br>";
+    body += "<b>Parameters</b><br>"
+
+    hidden = "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"/sign' method='post'>";
+    body += "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"' method='post'>"
+    
+    const { form_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
+    console.log("BO", obj)
+    body += form_append;
+    hidden += hidden_append;
+    body += "<br><input type='submit' value='Update preview'>"
+    body += "</form>"
+    hidden += "<br><input type='submit' value='Go to sign and send!'>"
+    hidden += "</form>"
+    const ref_url = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    const preview = wrap(activity, obj, { username, domain, ref_url, to, cc });
+    body += prettyTest(preview)
+    body += hidden;
     res.send(body)
 })
+
+router.post("/:username/:activity/:object/sign", (req, res) => {
+    const { username, activity, object } = req.params;
+    const domain = req.app.get('domain');
+    
+    const to = req.body.to !== undefined ? req.body.to : "";
+    const cc = req.body.cc !== undefined ? req.body.cc : "";
+
+    const guid = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    const dd = new Date();
+    const published = dd.toISOString();
+    var body = header();
+    const { body_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
+
+    body += "Review one last time...<br>"
+    body += "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"/sign/send' method='post'>"
+    body += hidden_append;
+    const ref_url = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    const preview = wrap(activity, obj, { username, domain, ref_url, to, cc });
+    body += prettyTest(preview)
+    body += "To: "+req.body.to+"<br>";
+    body += "CC: "+req.body.cc+"<br>";
+    body += "<input type='submit' value='Send'>"
+    body += "</form>"
+    res.send(body);
+});
+
+router.post("/:username/:activity/:object/sign/send", async (req, res) => {
+    const { username, activity, object } = req.params;
+    const domain = req.app.get('domain');
+
+    const to = req.body.to !== undefined ? req.body.to : "";
+    const cc = req.body.cc !== undefined ? req.body.cc : "";
+    
+    const guid = crypto.randomBytes(16).toString('hex');;
+    const dd = new Date();
+    const published = dd.toISOString();
+    var body = header();
+    const { body_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
+
+    const ref_url = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    const wrapped = wrap(activity, obj, { username, domain, ref_url, to, cc });
+    body += prettyTest(wrapped)
+
+    var followers = new Array();
+    followers.push(req.body.to)
+    for(let follower of followers){
+        let inbox = follower+'/inbox';
+        let myURL = new URL(follower);
+        let targetDomain = myURL.hostname;
+        await signAndSend(wrapped, username, domain, targetDomain, inbox)
+        .then((data) => {
+            console.log("SEND NOTE RESPONSE",data)
+            body += "To: "+follower+" = OK<br>";
+        })
+        .catch((err) => {
+            console.error(err)
+            body += "To: "+follower+" = ERROR<br>";
+        })
+    }
+    //body += "To: "+req.body.to+"<br>";
+    //body += "CC: "+req.body.cc+"<br>";
+    body += "<a href='"+tester_root+"'>BACK!</a>"
+    res.send(body);
+});
 
 router.get("*", (req, res) => {
     res.sendStatus(404)
