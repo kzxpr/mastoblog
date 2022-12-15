@@ -8,7 +8,7 @@ const { createActor } = require("./lib/createActor")
 const { createNote, createPage, createArticle } = require("./lib/createNote")
 const { wrapInCreate, wrapInUpdate, wrapInDelete, wrapInFlag, wrapInUndo, wrapInAnnounce, wrapInFollow, wrapInLike } = require("./lib/wrapInCreate")
 const { signAndSend } = require("./lib/signAndSend")
-const { makeMessage, makePage, makeArticle, makeEvent, makeNote } = require("./lib/makeMessage")
+const { makeMessage, makePage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage } = require("./lib/makeMessage")
 
 const tester_root = "/ap/admin/tester";
 
@@ -29,12 +29,14 @@ function prettyTest(obj){
 }
 
 router.get("/", async(req, res) => {
+    let domain = req.app.get('domain');
     var body = header();
     body += "Who are you?!<br>"
     body += "<ul>"
-    await knex("apaccounts").then((users) => {
+    await knex("apaccounts").where("username", "like", "%@"+domain).then((users) => {
         for(let user of users){
-            body += "<li><a href='"+tester_root+"/"+user.username+"'>"+user.username+"</a></li>"
+            let username = user.username.split("@")[1]
+            body += "<li><a href='"+tester_root+"/"+username+"'>"+username+"</a></li>"
         }
     })
     body += "</ul>"
@@ -62,7 +64,7 @@ function wrapper(){
 router.get("/:username/:activity", (req, res) => {
     const domain = req.app.get('domain');
     const { username, activity } = req.params;
-    const guid = "xxxxxxxxxxxxxx";
+    const guid = "";
     const ref_url = "https://"+domain+"/u/"+username+"/statuses/"+guid;
     var body = header();
     body += "Hi "+req.params.username+"<br>So you want to <b>"+req.params.activity+"</b> an activity?<br>";
@@ -85,18 +87,25 @@ function makeObject(object, params, body){
     const summary = body.summary !== undefined ? body.summary : "This is the summary text..."
     const name = body.name !== undefined ? body.name : "This is name - no HTML here"
     const url = body.url !== undefined ? body.url : "https://lol.dk";
-    const to = body.to !== undefined ? body.to : "https://www.w3.org/ns/activitystreams#Public"
-    const cc = body.cc !== undefined ? body.cc : "https://todon.eu/users/kzxpr"
+    const to = body.to !== undefined ? body.to : "https://todon.eu/users/kzxpr"
+    const cc = body.cc !== undefined ? body.cc : "https://www.w3.org/ns/activitystreams#Public"
     const startTime = body.startTime !== undefined ? body.startTime : "2023-12-31T23:00:00-08:00";
     const endTime = body.endTime !== undefined ? body.endTime : "2024-01-01T06:00:00-08:00";
     const inReplyTo = body.inReplyTo !== undefined ? body.inReplyTo : "";
+    const anyOf = body.anyOf !== undefined ? body.anyOf : "";
+    const oneOf = body.oneOf !== undefined ? body.oneOf : '[{"type": "Note","name": "Yes"},{"type": "Note","name": "No"}]';
+    const closed = body.closed !== undefined ? body.closed : "";
+    const href = body.href !== undefined ? body.href : "https://"+domain+"/public/";
+    const mediaType = body.mediaType !== undefined ? body.mediaType : "image/png";
+    const manual_guid = body.manual_guid != "" ? body.manual_guid : guid;
     var body = "";
     var hidden = "";
     var obj;
     attributedTo = "https://"+domain+"/u/"+username+"/";
     body += "<table>"
     body += "<tr><td colspan='3'><u>Common parameters</u></tr>"
-    body += "<tr><td width='120'>guid:<td> "+guid+"<td>(generated later)</tr>"
+    //body += "<tr><td width='120'>guid:<td> "+guid+"<td>(generated later)</tr>"
+    body += "<tr><td width='120'>guid:<td> <input type='text' name='manual_guid' value='"+manual_guid+"' style='width: 100%; max-width: 300px;'><td>(leave blank to generate later)</tr>";
     body += "<tr><td>attributed:<td> "+attributedTo+"<td></tr>"
     body += "<tr><td>published:<td> "+published+"<td>(updates automatically)</tr>"
     body += "<tr><td>to:<td> <input type='text' name='to' value='"+to+"' style='width: 100%; max-width: 300px;'><td>(url)</tr>";
@@ -106,6 +115,8 @@ function makeObject(object, params, body){
     hidden += "<input type='hidden' name='to' value='"+to+"'>";
     hidden += "<input type='hidden' name='cc' value='"+cc+"'>";
     hidden += "<input type='hidden' name='inReplyTo' value='"+inReplyTo+"'>";
+    hidden += "<input type='hidden' name='manual_guid' value='"+manual_guid+"'>";
+    
     body += "<tr><td colspan='3'><u>Special parameters</u></tr>"
     body += "</table>"
     if(object=="Id"){
@@ -119,7 +130,15 @@ function makeObject(object, params, body){
         //hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = makeNote(username, domain, guid, { published, name, content, to, cc, url, summary, inReplyTo })
+        obj = makeNote(username, domain, manual_guid, { published, name, content, to, cc, url, summary, inReplyTo })
+    }else if(object=="Image"){
+        body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
+        body += "<label>href</label><input type='text' name='href' value='"+href+"'><br>"
+        body += "<label>mediaType</label><input type='text' name='mediaType' value='"+mediaType+"'><br>"
+        hidden += "<input type='hidden' name='name' value='"+name+"'>";
+        hidden += "<input type='hidden' name='href' value='"+href+"'>";
+        hidden += "<input type='hidden' name='mediaType' value='"+mediaType+"'>";
+        obj = makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo })
     }else if(object=="Event"){
         body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
         //body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
@@ -131,11 +150,23 @@ function makeObject(object, params, body){
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         //hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = makeEvent(username, domain, guid, { published, name, content, to, cc, startTime, endTime, url, summary })
+        obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, startTime, endTime, url, summary })
+    }else if(object=="Question"){
+        body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
+        body += "<label>anyOf</label><input type='text' name='anyOf' value='"+anyOf+"'><br>"
+        body += "<label>oneOf</label><input type='text' name='oneOf' value='"+oneOf+"'><br>"
+        body += "<label>closed</label><input type='text' name='closed' value='"+closed+"'><br>"
+        body += "<label>endTime</label><input type='text' name='endTime' value='"+endTime+"'><br>"
+        hidden += "<input type='hidden' name='content' value='"+content+"'>";
+        hidden += "<input type='hidden' name='anyOf' value='"+anyOf+"'>";
+        hidden += "<input type='hidden' name='oneOf' value='"+oneOf+"'>";
+        hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
+        hidden += "<input type='hidden' name='closed' value='"+closed+"'>";
+        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, anyOf, oneOf, endTime, closed })
     }else{
         body += "<label>Content</label><input type='text' name='content' value='"+content+"'><br>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
-        obj = makeArticle(username, domain, guid, published, content, name, url)
+        obj = makeArticle(username, domain, manual_guid, published, content, name, url)
     }
 
     return { form_append: body, hidden_append: hidden, obj }
@@ -161,7 +192,7 @@ router.all("/:username/:activity/:object", (req, res) => {
     const { username, activity, object } = req.params;
     const domain = req.app.get('domain');
     
-    const guid = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    const guid = "";
     const dd = new Date();
     const published = dd.toISOString();
 
@@ -198,7 +229,7 @@ router.post("/:username/:activity/:object/sign", (req, res) => {
     const to = req.body.to !== undefined ? req.body.to : "";
     const cc = req.body.cc !== undefined ? req.body.cc : "";
 
-    const guid = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    const guid = "";
     const dd = new Date();
     const published = dd.toISOString();
     var body = header();

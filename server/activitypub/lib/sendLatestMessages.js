@@ -5,9 +5,9 @@ const { signAndSend } = require("./signAndSend")
 const { makeMessage } = require("./makeMessage")
 const { wrapInCreate } = require("./wrapInCreate")
 
-async function sendLatestMessages(follower, user_id, username, domain){
+async function sendLatestMessages(follower, username, domain){
     return new Promise(async(resolve, reject) => {
-        await knex("apmessages").where("attributedTo", user_id).limit(10)
+        await knex("apmessages").where("attributedTo", "@"+username+"@"+domain).limit(10)
         .then(async(messages) => {
             for(let message of messages){
                 const msg = makeMessage(username, domain, message.guid, message.publishedAt, message.content);

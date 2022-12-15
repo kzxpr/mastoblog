@@ -15,8 +15,17 @@ const parseJSON = require("./lib/parseJSON")
 const { signAndSend } = require("./lib/signAndSend")
 const { sendLatestMessages } = require("./lib/sendLatestMessages")
 const { addFollower } = require("./lib/addFollower")
+const { addAccount } = require("./lib/addAccount")
 
 const { startAPLog, endAPLog } = require("./lib/aplog")
+
+function decodeFollowerUrl(url){
+    const step1 = url.replace("https://", "");
+    const split = step1.split("/users/")
+    const domain = split[0]
+    const username = split[1]
+    return { follower_username: username, follower_domain: domain }
+}
 
 router.get('/:username', async function (req, res) {
     const aplog = await startAPLog(req)
@@ -109,7 +118,7 @@ router.get(["/:username/outbox"], async(req, res) => {
             "first": "https://"+domain+"/u/"+username+"/outbox?page=true"
         })
     }else{*/
-        const user_id = await knex("apaccounts").where("username", "=", username).select("id").first().then((d) => { return d.id }).catch((e) => { res.sendStatus(500)})
+        const user_id = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("id").first().then((d) => { return d.id }).catch((e) => { res.sendStatus(500)})
         const messages = await knex("apmessages").where("attributedTo", user_id)
         .then((messages) => {
             var output = new Array();
@@ -150,7 +159,7 @@ router.get(["/:username/collections/featured"], async(req, res) => {
     const { page } = req.query;
     const domain = req.app.get('domain');
     const context = new Array("https://www.w3.org/ns/activitystreams")
-        const user_id = await knex("apaccounts").where("username", "=", username).select("id").first().then((d) => { return d.id }).catch((e) => { res.sendStatus(500)})
+        const user_id = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("id").first().then((d) => { return d.id }).catch((e) => { res.sendStatus(500)})
         const messages = await knex("apmessages").where("attributedTo", user_id).andWhere("pinned", "=", 1)
         .then((messages) => {
             var output = new Array();
@@ -180,7 +189,7 @@ router.get("/:username/statuses/:messageid", async (req, res) => {
     const { username, messageid } = req.params;
     const domain = req.app.get('domain');
     const context = new Array("https://www.w3.org/ns/activitystreams")
-    const user_id = await knex("apaccounts").where("username", "=", username).select("id").first().then((d) => { return d.id }).catch((e) => { res.sendStatus(500)})
+    const user_id = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("id").first().then((d) => { return d.id }).catch((e) => { res.sendStatus(500)})
     const messages = await knex("apmessages").where("guid", messageid).first()
         .then(async (message) => {
             //console.log("M", message)
@@ -220,11 +229,54 @@ router.post('/:username/inbox', async function (req, res) {
     const reqtype = req.body.type;
     //console.log("Reqtype",reqtype)
     
-    if (typeof req.body.object === 'string'){
+    /*if(reqtype === 'Create'){
+        const objtype = req.body.object.type;
+        if(objtype==="Note"){
+            console.log("I got a note saying",req.body.object.content)
+            await endAPLog(aplog, "Received note", 201)
+            res.sendStatus(201)
+        }else{
+            await endAPLog(aplog, "Received create, but object type wasn't recognized", 500)
+            res.sendStatus(500)
+        }*/
+    if(reqtype == 'Follow'){
+        if(typeof req.body.object === 'string'){
+            let local_username = req.body.object.replace("https://"+domain+"/u/", "");
+            await knex("apaccounts").where("username", "=", "@"+local_username+"@"+domain).first()
+            .then(async(account) => {
+                if(account){
+                    await sendAcceptMessage(req.body, local_username, domain, targetDomain);
+                    const follower = req.body.actor;
+                    const { follower_username, follower_domain } = decodeFollowerUrl(follower)
+                    console.log("TEST", follower_username, follower_domain)
+                    await addAccount(follower_username, follower_domain)
+                    //console.log("FOLLOW MED",req.body, local_username, domain, targetDomain)
+                    await addFollower(local_username+"@"+domain, follower)
+                    await sendLatestMessages(follower, local_username, domain)
+                    .then(async(d) => {
+                        await endAPLog(aplog, "Pinned messages were sent to new follower: "+follower)
+                        res.sendStatus(200)
+                    })
+                    .catch(async(e) => {
+                        console.error("ERROR in sendLatestMessages", e)
+                        await endAPLog(aplog, "ERROR in sendLatestMessages", 500)
+                        res.sendStatus(500)
+                    })
+                }else{
+                    res.sendStatus(404)
+                }
+            });
+        }
+    }else{
+        await endAPLog(aplog, "REQ type is not recognized...", 500)
+        res.sendStatus(500)
+    }
+
+    /*if (typeof req.body.object === 'string'){
         let local_username = req.body.object.replace(`https://${domain}/u/`,'');
         //const username = name;//+"@"+domain;
 
-        await knex("apaccounts").where("username", "=", local_username).first()
+        await knex("apaccounts").where("username", "=", "@"+local_username+"@"+domain).first()
         .then(async(account) => {
             if(account){
                 const user_id = account.id
@@ -248,26 +300,13 @@ router.post('/:username/inbox', async function (req, res) {
                     res.sendStatus(500)
                 }
             }else{
-                await endAPLog(aplog, "No user found for requested account", 404)
+                //await endAPLog(aplog, "No user found for requested account", 404)
                 res.sendStatus(404)
             }
         })
     }else{
-        if(reqtype === 'Create'){
-            const objtype = req.body.object.type;
-            if(objtype==="Note"){
-                console.log("I got a note saying",req.body.object.content)
-                await endAPLog(aplog, "Received note", 201)
-                res.sendStatus(201)
-            }else{
-                await endAPLog(aplog, "Received create, but object type wasn't recognized", 500)
-                res.sendStatus(500)
-            }
-        }else{
-            await endAPLog(aplog, "REQ type is not recognized...", 500)
-            res.sendStatus(500)
-        }
-    }
+        
+    }*/
     //console.log("**************************************")
 });
 

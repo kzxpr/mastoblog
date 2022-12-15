@@ -13,7 +13,7 @@ async function signAndSend(message, name, domain, targetDomain, inbox) {
     //let db = req.app.get('db');
     //let result = db.prepare('select privkey from accounts where name = ?').get(`${name}@${domain}`);
     const domain_raw = domain.split("/")[0]
-    const result = await knex("apaccounts").where("username", "=", name).orWhere("username", "=", name+"@"+domain).select("privkey").first();
+    const result = await knex("apaccounts").where("username", "=", "@"+name+"@"+domain).select("privkey").first();
     if (result === undefined) {
       reject("No record found for "+name);
     }

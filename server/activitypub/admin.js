@@ -178,7 +178,8 @@ router.get('/createActor', async function (req, res) {
     // pass in a name for an account, if the account doesn't exist, create it!
     const username = req.query.username;
     console.log("createActor:", username)
-    await createActor(username)
+    let domain = req.app.get('domain');
+    await createActor(username, domain)
         .then(async (account) => {
             await knex("apaccounts").insert({
                 ...account,

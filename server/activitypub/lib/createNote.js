@@ -9,7 +9,7 @@ async function createArticle(name, content, username, domain, link){
     const guidNote = crypto.randomBytes(16).toString('hex');
     let d = new Date();
 
-    const user_id = await knex("apaccounts").where("username", "=", username).select("id").first()
+    const user_id = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("id").first()
     .then((d) => {
       return d.id;
     })
@@ -37,7 +37,7 @@ async function createNote(content, username, domain, link){
     const guidNote = crypto.randomBytes(16).toString('hex');
     let d = new Date();
 
-    const user_id = await knex("apaccounts").where("username", "=", username).select("id").first()
+    const user_id = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("id").first()
     .then((d) => {
       return d.id;
     })
@@ -65,7 +65,7 @@ async function createPage(href, content, username, domain){
     const guidNote = crypto.randomBytes(16).toString('hex');
     let d = new Date();
 
-    const user_id = await knex("apaccounts").where("username", "=", username).select("id").first()
+    const user_id = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("id").first()
     .then((d) => {
       return d.id;
     })

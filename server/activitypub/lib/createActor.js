@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 const createWebfinger = require("./createWebfinger")
 
-async function createActor(username){
+async function createActor(username, domain){
     return new Promise(async (resolve, reject) => {
         if(username===undefined){
             reject({statusCode: 400, msg: 'Bad request. Please make sure "account" is a property in the POST body.'});
@@ -27,7 +27,7 @@ async function createActor(username){
                     //let webfingerRecord = createWebfinger(username, domain);
                     const apikey = crypto.randomBytes(16).toString('hex');
                     resolve({
-                        username,
+                        username: "@"+username+"@"+domain,
                         apikey,
                         pubkey: publicKey,
                         privkey: privateKey
