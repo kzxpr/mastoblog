@@ -102,3 +102,11 @@ dist
 
 # TernJS port file
 .tern-port
+
+
+public/egglogo.png
+public/eggs.jpg
+public/eggs_org.png
+public/svm.jpg
+public/svm.png
+public/svm.xcf
