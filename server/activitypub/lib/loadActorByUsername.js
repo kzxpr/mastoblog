@@ -10,7 +10,7 @@ async function loadActorByUsername(username, domain){
                 reject({statuscode: 404, msg: "No record found for "+username})
             } else {
                 let tempActor = {};
-                
+
                 // THIS IS DESCRIBED FOR MASTODON AS "PROFILE":
                 // SEE https://docs.joinmastodon.org/spec/activitypub/#profile
                 //
@@ -55,10 +55,19 @@ async function loadActorByUsername(username, domain){
                 }else{
                     if(result.icon.substr(-4)==".png"){
                         tempActor["icon"].mediaType = "image/png";
-                        tempActor["icon"].url = "https://"+domain+"/public/"+result.icon+".png"
+                        tempActor["icon"].url = "https://"+domain+"/public/"+result.icon;
                     }
                 }
-                
+
+		tempActor["image"] = {};
+		tempActor["image"].type = "Image";
+		if(!result.image){
+
+		}else{
+			tempActor["image"].mediaType = "image/jpeg";
+			tempActor["image"].url = "https://"+domain+"/public/"+result.image;
+		}
+
                 var attachment = new Array();
                 attachment.push({
                     "type": "PropertyValue",
@@ -70,8 +79,7 @@ async function loadActorByUsername(username, domain){
                 tempActor["publicKey"].id = "https://"+domain+"/u/"+username+"#main-key";
                 tempActor["publicKey"].owner = "https://"+domain+"/u/"+username;
                 tempActor["publicKey"].publicKeyPem = result.pubkey;
-                
-                
+
                 resolve(tempActor);
             }
         })
