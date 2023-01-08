@@ -1,5 +1,6 @@
 const db = require("./../../../knexfile")
 const knex = require("knex")(db)
+const { encodeStr } = require("./addAccount")
 
 async function startAPLog(req){
     const ip = req.ip;

@@ -15,7 +15,7 @@ const { sendAcceptMessage } = require("./lib/sendAcceptMessage")
 const { verifySignature } = require("./lib/signAndSend")
 const { sendLatestMessages } = require("./lib/sendLatestMessages")
 const { addFollower } = require("./lib/addFollower")
-const { encodeStr, lookupAccountByURI } = require("./lib/addAccount")
+const { lookupAccountByURI } = require("./lib/addAccount")
 
 const { startAPLog, endAPLog } = require("./lib/aplog");
 const { addMessage } = require('./lib/addMessage');
