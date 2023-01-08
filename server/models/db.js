@@ -5,6 +5,73 @@ const knex = require('knex')(db)
 
 Model.knex(knex)
 
+class Account extends Model {
+	static get tableName() {
+		return 'apaccounts';
+	}
+
+	static get relationMappings() {
+		return {
+			followers: {
+				relation: Model.ManyToManyRelation,
+				modelClass: Account,
+				join: {
+					from: 'apaccounts.uri',
+					through: {
+						from: 'apfollowers.username',
+						to: 'apfollowers.follower'
+					},
+					to: 'apaccounts.uri'
+				}
+			},
+			following: {
+				relation: Model.ManyToManyRelation,
+				modelClass: Account,
+				join: {
+					from: 'apaccounts.uri',
+					through: {
+						from: 'apfollowers.follower',
+						to: 'apfollowers.username'
+					},
+					to: 'apaccounts.uri'
+				}
+			}
+		}
+	}
+}
+
+class Message extends Model {
+	static get tableName() {
+		return 'apmessages';
+	}
+
+	static get relationMappings() {
+		return {
+			creator: {
+				relation: Model.HasOneRelation,
+				modelClass: Account,
+				join: {
+					from: 'apmessages.attributedTo',
+					to: 'apaccounts.uri'
+				}
+			},
+			addressees: {
+				relation: Model.ManyToManyRelation,
+				modelClass: Account,
+				join: {
+					from: 'apmessages.uri',
+					through: {
+						from: 'apaddressee.message_uri',
+						to: 'apaddressee.account_uri',
+						extra: { field: 'field', type: 'type' }
+					},
+					to: 'apaccounts.uri'
+				}
+			}
+		}
+	}
+}
+
 class Post extends Model {
 	static get tableName() {
 		return 'posts';
@@ -51,4 +118,4 @@ class Tag extends Model {
 	}
 }
 
-module.exports = { Post, Tag }
+module.exports = { Post, Tag, Account, Message }

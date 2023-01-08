@@ -1,0 +1,46 @@
+MESSAGES
+{{#each messages}}
+    <div style="margin: 10px; border: 1px solid #000; padding: 10px;">
+        <div>
+            ID: {{this.id}}
+        </div>
+        <div>
+            {{#if this.inReplyTo}}
+                inReplyTo: {{this.inReplyTo}}
+            {{else}}
+                inReplyTo: <i>nothing</i>
+            {{/if}}
+        </div>
+        {{#if (notnull this.attributedTo)}}
+            <div>
+                FROM: 
+                {{#if this.creator.icon}}
+                    <img src="{{this.creator.icon}}" width="50">
+                {{/if}}
+            </div>
+            
+            {{#if this.addressees}}
+                <div style="font-weight: bold">
+                    TO: 
+                    {{#each this.addressees}}
+                        {{#if (eq this.type 1)}}
+                            PUBLIC
+                        {{else if (eq this.type 2)}}
+                            FOLLOWERS
+                        {{else}}
+                            {{#if (notnull this.icon)}}
+                                <img src="{{this.icon}}" width="50">
+                            {{else}}
+                                {{this.username}}
+                            {{/if}}
+                        {{/if}}
+                        ({{this.field}})
+                    {{/each}}
+                </div>
+            {{/if}}
+
+            
+        {{/if}}
+        {{{this.content}}}
+    </div>
+{{/each}}

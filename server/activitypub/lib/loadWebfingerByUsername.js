@@ -4,7 +4,7 @@ const knex = require("knex")(db)
 async function loadWebfingerByUsername(username, domain){
   console.log("Loading webfinger for", username)
   return new Promise(async (resolve, reject) => {
-    const result = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("username").first()
+    const result = await knex("apaccounts").where("handle", "=", username+"@"+domain).select("username").first()
       .then((result) => {
         if (result === undefined) {
           reject({statuscode: 404, msg: "No record found for "+username })

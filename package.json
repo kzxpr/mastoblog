@@ -27,8 +27,10 @@
     "express": "^4.18.2",
     "express-basic-auth": "^1.2.1",
     "express-handlebars": "^6.0.6",
+    "jsonwebtoken": "^9.0.0",
     "knex": "^2.3.0",
     "mysql": "^2.18.1",
+    "node-emoji": "^1.11.0",
     "objection": "^3.0.1",
     "readline-sync": "^1.4.10",
     "request": "^2.88.2"

@@ -14,6 +14,7 @@ router.get('/', async function (req, res) {
     } else {
         let account = resource.replace('acct:','');
         const parts = account.split("@");
+        console.log("Looking up", parts[0], parts[1])
         loadWebfingerByUsername(parts[0], parts[1])
         .then(async (data) => {
             await endAPLog(aplog, data)

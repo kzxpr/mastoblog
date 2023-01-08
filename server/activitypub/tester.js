@@ -9,6 +9,8 @@ const { createNote, createPage, createArticle } = require("./lib/createNote")
 const { wrapInCreate, wrapInUpdate, wrapInDelete, wrapInFlag, wrapInUndo, wrapInAnnounce, wrapInFollow, wrapInLike } = require("./lib/wrapInCreate")
 const { signAndSend } = require("./lib/signAndSend")
 const { makeMessage, makePage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage } = require("./lib/makeMessage")
+const { findInbox } = require("./lib/addAccount")
+const { addMessage } = require("./lib/addMessage")
 
 const tester_root = "/ap/admin/tester";
 
@@ -30,16 +32,48 @@ function prettyTest(obj){
 
 router.get("/", async(req, res) => {
     let domain = req.app.get('domain');
+    var msg = "";
+    if(req.query.username){
+        const username = req.query.username;
+        console.log("createActor:", username, domain)
+        await createActor(username, domain)
+            .then(async (account) => {
+                await knex("apaccounts").insert({
+                    ...account,
+                    createdAt: knex.fn.now()
+                })
+                .then(() => {
+                    msg = "Created actor: "+username+"@"+domain;
+                })
+                .catch((e) => {
+                    console.error("ERROR while creating new actor", e)
+                    msg = "ERROR adding actor: "+username+"@"+domain;
+                })
+            })
+            .catch((e) => {
+                msg = "ERROR while creating actor: "+username+"@"+domain;
+            })
+    }
+    
+    
     var body = header();
     body += "Who are you?!<br>"
+    if(msg!=""){
+        body += "<i>"+msg+"</i><br>"
+    }
     body += "<ul>"
-    await knex("apaccounts").where("username", "like", "%@"+domain).then((users) => {
+    await knex("apaccounts").where("handle", "like", "%@"+domain).then((users) => {
         for(let user of users){
-            let username = user.username.split("@")[1]
+            let username = user.username
             body += "<li><a href='"+tester_root+"/"+username+"'>"+username+"</a></li>"
         }
     })
     body += "</ul>"
+    body += "<b>Create new actor</b><br>";
+    body += "<form action='"+tester_root+"/' method='get'>";
+    body += "<input type='text' name='username' placeholder='username'>"
+    body += "<input type='submit' value='Create actor'>"
+    body += "</form>"
     res.send(body)
 })
 
@@ -261,26 +295,46 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     var body = header();
     const { body_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
 
-    const ref_url = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    const uri = "https://"+domain+"/u/"+username;
+    const ref_url = uri+"/statuses/"+guid;
     const wrapped = wrap(activity, obj, { username, domain, ref_url, to, cc });
     body += prettyTest(wrapped)
 
     var followers = new Array();
-    followers.push(req.body.to)
-    for(let follower of followers){
-        let inbox = follower+'/inbox';
-        let myURL = new URL(follower);
-        let targetDomain = myURL.hostname;
-        await signAndSend(wrapped, username, domain, targetDomain, inbox)
-        .then((data) => {
-            console.log("SEND NOTE RESPONSE",data)
-            body += "To: "+follower+" = OK<br>";
+    if(to!="" && to !="https://www.w3.org/ns/activitystreams#Public"){
+        followers.push(to)
+    }
+    if(cc!="" && cc!="https://www.w3.org/ns/activitystreams#Public"){
+        followers.push(cc)
+    }
+    console.log("A", activity)
+    if(activity == "Create" && typeof obj === 'object'){
+        await addMessage(obj)
+        .then(async(ok) => {
+            console.log("Added message to DB")
         })
-        .catch((err) => {
-            console.error(err)
-            body += "To: "+follower+" = ERROR<br>";
+        .catch((e) => {
+            console.error("ERROR in addMessage")
+            res.sendStatus(500)
         })
     }
+    
+            for(let follower of followers){
+                let inbox = await findInbox(follower)
+                let myURL = new URL(follower);
+                let targetDomain = myURL.hostname;
+                await signAndSend(wrapped, uri, targetDomain, inbox)
+                .then((data) => {
+                    console.log("SEND NOTE RESPONSE",data)
+                    body += "To: "+follower+" = OK<br>";
+                })
+                .catch((err) => {
+                    console.error(err)
+                    body += "To: "+follower+" = ERROR<br>";
+                })
+            }
+        
+    
     //body += "To: "+req.body.to+"<br>";
     //body += "CC: "+req.body.cc+"<br>";
     body += "<a href='"+tester_root+"'>BACK!</a>"

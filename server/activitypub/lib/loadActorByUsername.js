@@ -2,9 +2,9 @@ const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 
 async function loadActorByUsername(username, domain){
-    console.log("\x1b[33m%s\x1b[0m", "PROFILE", "for", username)
+    console.log("\x1b[33m%s\x1b[0m", "PROFILE", "for", username, domain)
     return new Promise(async (resolve, reject) => {
-        await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).first()
+        await knex("apaccounts").where("handle", "=", username+"@"+domain).first()
         .then((result) => {
             if (result === undefined) {
                 reject({statuscode: 404, msg: "No record found for "+username})
@@ -29,7 +29,7 @@ async function loadActorByUsername(username, domain){
                 tempActor["summary"] = result.summary;
                 tempActor["url"] = "https://"+domain+"/?user="+username;
                 tempActor["type"] = "Person";
-                tempActor["preferredUsername"] = username+"@"+domain;
+                tempActor["preferredUsername"] = username;
                 tempActor["discoverable"] = true;
 
                 /* LINKS */
@@ -55,25 +55,32 @@ async function loadActorByUsername(username, domain){
                 }else{
                     if(result.icon.substr(-4)==".png"){
                         tempActor["icon"].mediaType = "image/png";
-                        tempActor["icon"].url = "https://"+domain+"/public/"+result.icon;
+                        tempActor["icon"].url = result.icon;
+                    }else if(result.icon.substr(-4)==".jpg"){
+                        tempActor["icon"].mediaType = "image/jpg";
+                        tempActor["icon"].url = result.icon;
                     }
                 }
 
-		tempActor["image"] = {};
-		tempActor["image"].type = "Image";
-		if(!result.image){
+		
+        		if(!result.image){
 
-		}else{
-			tempActor["image"].mediaType = "image/jpeg";
-			tempActor["image"].url = "https://"+domain+"/public/"+result.image;
-		}
+		        }else{
+                    tempActor["image"] = {};
+                    tempActor["image"].type = "Image";
+                    tempActor["image"].mediaType = "image/jpeg";
+                    tempActor["image"].url = "https://"+domain+"/public/"+result.image;
+                }
 
                 var attachment = new Array();
-                attachment.push({
-                    "type": "PropertyValue",
-                    "name": "Homepage",
-                    "value": "<a href='"+result.homepage+"' rel='me nofollow noopener noreferrer' target='_blank'>"+result.homepage+"</a>"
-                  })
+                if(result.homepage){
+                    attachment.push({
+                        "type": "PropertyValue",
+                        "name": "Homepage",
+                        "value": "<a href='"+result.homepage+"' rel='me nofollow noopener noreferrer' target='_blank'>"+result.homepage+"</a>"
+                    })
+                }
+                        
                 tempActor["attachment"] = attachment
                 tempActor["publicKey"] = {};
                 tempActor["publicKey"].id = "https://"+domain+"/u/"+username+"#main-key";

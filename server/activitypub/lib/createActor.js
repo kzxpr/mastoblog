@@ -27,10 +27,12 @@ async function createActor(username, domain){
                     //let webfingerRecord = createWebfinger(username, domain);
                     const apikey = crypto.randomBytes(16).toString('hex');
                     resolve({
-                        username: "@"+username+"@"+domain,
+                        username: username,
+                        handle: username+"@"+domain,
                         apikey,
                         pubkey: publicKey,
-                        privkey: privateKey
+                        privkey: privateKey,
+                        uri: "https://"+domain+"/u/"+username
                     })
                 }
             })

@@ -6,4 +6,5 @@ module.exports = {
     migrations: {
         directory: './server/migrations',
     },
+    charset: 'utf8mb4'
 };

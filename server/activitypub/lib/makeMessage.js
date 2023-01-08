@@ -1,23 +1,25 @@
-function makeMessage(username, domain, guid, params){
-    const { published, content, url } = params;
+function makeMessage(uri, guid, params){
+    const { published, content, url, cc } = params;
     var url_link;
     if(!url){
-        url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+        url_link = uri+"/statuses/"+guid;
     }else{
         url_link = url;
     }
+    var cc_list = new Array(uri+"/followers")
+    if(cc){
+        cc_list.push(cc)
+    }
     return {
         "@context": ["https://www.w3.org/ns/activitystreams"],
-        "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
+        "id": uri+"/statuses/"+guid,
         "type": "Note",
         "published": published,
-        "attributedTo": "https://"+domain+"/u/"+username,
+        "attributedTo": uri,
         "to": [
             "https://www.w3.org/ns/activitystreams#Public"
         ],
-        "cc": [
-            "https://"+domain+"/u/"+username+"/followers"
-        ],
+        "cc": cc_list,
         "url": url_link,
         "content": content,
         "contentMap": {

@@ -1,12 +1,12 @@
-function createWebfinger(name, domain) {
+function createWebfinger(username, domain) {
     return {
-      'subject': `acct:${name}@${domain}`,
+      'subject': `acct:${username}@${domain}`,
   
       'links': [
         {
           'rel': 'self',
           'type': 'application/activity+json',
-          'href': `https://${domain}/u/${name}`
+          'href': `https://${domain}/u/${username}`
         }
       ]
     };

@@ -1,4 +1,4 @@
-'use strict';
+/*'use strict';
 const express = require('express'),
       router = express.Router();
 
@@ -177,8 +177,8 @@ router.post('/createNote', async function (req, res) {
 router.get('/createActor', async function (req, res) {
     // pass in a name for an account, if the account doesn't exist, create it!
     const username = req.query.username;
-    console.log("createActor:", username)
     let domain = req.app.get('domain');
+    console.log("createActor:", username, domain)
     await createActor(username, domain)
         .then(async (account) => {
             await knex("apaccounts").insert({
@@ -265,4 +265,4 @@ router.get("/what", (req, res) => {
     res.send("AUTH")
 })
 
-module.exports = router;
+module.exports = router;*/

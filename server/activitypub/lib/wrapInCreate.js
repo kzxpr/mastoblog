@@ -2,11 +2,11 @@ const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 crypto = require('crypto');
 
-function wrapInCreate(obj, actor, domain, follower, guid = ""){
+function wrapInCreate(obj, actor, follower, guid = ""){
   // This wrap requires to or cc...
   var guidCreate;
   if(obj.id){
-    //const cryptkey = crypto.randomBytes(16).toString('hex');;
+    //const cryptkey = crypto.randomBytes(16).toString('hex');
     guidCreate = obj.id + "/create"
   }else{
     guidCreate = guid;
@@ -33,9 +33,10 @@ function wrapInUpdate(object, actor, domain = "", follower = [], guid = ""){
   //  actor | object | target | result | origin | instrument 
   
   /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
-    
+    const random = crypto.randomBytes(16).toString('hex');
     let updateMessage = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
+      'id': object.id+"/update/"+random,
       'type': 'Update',
       'actor': actor,
       'object': object
@@ -51,6 +52,7 @@ function wrapInDelete(object, actor, domain = "", params, guid = ""){
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
+      'id': actor+"/activity/"+guid+"/delete",
       'type': 'Delete',
       'actor': actor,
       'object': object
@@ -66,6 +68,7 @@ function wrapInAnnounce(object, actor, domain = "", params, guid = ""){
     
   let wrap = {}
   wrap["@context"] = ['https://www.w3.org/ns/activitystreams'];
+  wrap['id'] = actor+"/activity/"+guid+"/announce",
   wrap["type"] = 'Announce';
   wrap["actor"] = actor;
   wrap["to"] = [ to ];
@@ -83,6 +86,7 @@ function wrapInFollow(object, actor, domain = "", follower = [], guid = ""){
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
+      'id': actor+"/activity/"+guid+"/follow",
       'type': 'Follow',
       'actor': actor,
       'object': object
@@ -97,6 +101,7 @@ function wrapInUndo(object, actor, domain = "", follower = [], guid = "", params
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
+      'id': actor+"/activity/"+guid+"/undo",
       'type': 'Undo',
       'actor': actor,
       'to': to,

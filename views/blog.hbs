@@ -10,6 +10,19 @@
             {{/each}}
         </ul>
         <div></div>
+            <b>Followers:</b>
+            <div class="followers--box">
+            {{#each followers}}
+                {{#if (notempty this.icon)}}
+                    <div class="followers--icon">
+                        <a href="{{this.homepage}}" target="_new">
+                            <img src="{{this.icon}}" width="50" alt="{{this.displayname}}">
+                        </a>
+                    </div>
+                {{/if}}
+            {{/each}}
+            </div>
+        <div></div>
         <div>
             <ul class="linklist">
                 {{#each links}}

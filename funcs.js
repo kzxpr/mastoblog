@@ -32,6 +32,14 @@ function lt(arg1, arg2, options) {
     return (arg1 < arg2) ? true : false;
 }
 
+function notempty(arg1){
+    return (arg1 != "" && arg1 !== null)
+}
+
+function notnull(arg1) {
+    return arg1 !== null;
+}
+
 function count(arr){
     if(arr){
         return arr.length;
@@ -44,4 +52,4 @@ function prettyJSON(src){
     return JSON.stringify(JSON.parse(src), undefined, 4)
 }
 
-module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero, prettyJSON }
+module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero, prettyJSON, notnull, notempty }

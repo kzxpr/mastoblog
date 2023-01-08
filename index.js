@@ -4,9 +4,11 @@ const app = express();
 const port = process.env.PORT || 3011;
 
 /* KNEX */
-const { Tag, Post } = require("./server/models/db")
+const { Tag, Post, Account, Message } = require("./server/models/db")
 const db = require("./knexfile")
 const knex = require("knex")(db)
+
+const { encodeStr } = require("./server/activitypub/lib/addAccount")
 
 /* CORS */
 const cors = require('cors')
@@ -62,11 +64,11 @@ function asyncAuthorizer(username, password, cb) {
 }
 
 /* ACTIVITY PUB */
-const ap_admin = require("./server/activitypub/admin")
+//const ap_admin = require("./server/activitypub/admin")
 const ap_webfinger = require("./server/activitypub/webfinger")
 const ap_user = require("./server/activitypub/user")
 app.use("/ap/admin", cors({ credentials: true, origin: true }), basicUserAuth);
-app.use("/ap/admin/api", ap_admin)
+//app.use("/ap/admin/api", ap_admin)
 app.use("/.well-known/webfinger/", cors(), ap_webfinger)
 app.use("/u", cors(), ap_user)
 
@@ -124,19 +126,54 @@ async function getSiteInfo(){
     const sitetitle = await getConfigByKey("sitetitle");
     const sitesubtitle = await getConfigByKey("sitesubtitle")
     const user_url = await getConfigByKey("user_url")
+    const { followers, following } = await Account.query()
+        .where("handle", "=", user_url)
+        .first()
+        .withGraphFetched("[followers.^1,following.^1]")
+        .then((result) => {
+            return { ...result };
+        })
+        .catch((err) => {
+            console.error("getSiteInfo: ", err)
+        })
     return {
         sitetitle,
         sitesubtitle,
         my_url: user_url,
         footer: "This website is running on <a href='https://github.com/kzxpr/mastoblog' target='_new'>MastoBlog</a>. Download the repository and host your own!",
         links: [ { name: "MastoBlog code", url: "https://github.com/kzxpr/mastoblog" } ],
-        followers: [
-            { name: "user1" },
-            { name: "user2" },
-        ]
+        followers, following
     }
     // "https://toot.community/users/openculture",
 }
+
+const { checkFeed } = require("./server/activitypub/lib/checkFeed")
+
+app.get("/checkfeed", checkFeed)
+
+app.get("/tjek", async(req, res) => {
+    const str = "ch 🍑 N ▇ I S B ▇ B";
+    const encstr = encodeStr(str)
+    console.log(encstr)
+    await knex("test").insert({ text: encstr })
+    .then((d) => {
+        console.log("SUCCESS!")
+    })
+    .catch((e) => {
+        console.error(e)
+    })
+    res.send("OK")
+})
+
+app.get("/feed", async (req, res) => {
+    const siteinfo = await getSiteInfo();
+    const messages = await Message.query().orderBy("publishedAt", "desc").withGraphFetched("[creator.^1, addressees.^1]")
+    for(let m of messages){
+        console.log("FOUND ",m.addressees)
+    }
+    
+    res.render("feed", { ...siteinfo, messages });
+})
 
 app.post("/followme", async (req, res) => {
     const { your_instance } = req.body;
@@ -157,6 +194,56 @@ app.post("/followme", async (req, res) => {
         res.render("text", { ...siteinfo, text });
     }
 })
+
+/*const { makeMyFeed, getWebfinger, getStreamFromUserBase, readLinkFromWebfinger, getObjectItem } = require("./server/activitypub/lib/ap-feed")
+
+
+
+app.get("/obj", async(req, res) => {
+    await getObjectItem("https://todon.eu/users/kzxpr/followers?page=4")
+        .then((result) => {
+            res.send(result)
+        })
+        .catch((e) => {
+            console.error(e)
+            res.sendStatus(500)
+        })
+})
+
+app.get("/profile", async(req, res) => {
+    //const server = "todon.eu";
+    const username = "kzxpr@todon.eu";
+    //const username = "NOISEBOB@todon.nl"
+    
+    lookupProfileLink(username)
+        .then((profile) => {
+            res.send(profile);
+        })
+        .catch((err) => {
+            console.error(err)
+            res.sendStatus(500)
+        })
+})
+
+
+ 
+ 
+
+app.get("/test", async(req, res) => {
+    //const server = "todon.eu";
+    //const username = "kzxpr@todon.eu";
+    //const username = "apdk2013@norrebro.space"
+    const username = "NOISEBOB@todon.nl"
+    
+    getProfile(username)
+        .then((profile) => {
+            res.send(profile);
+        })
+        .catch((err) => {
+            console.error(err)
+            res.sendStatus(500)
+        })
+})*/
 
 app.get(["/what"], async (req, res) => {
     const siteinfo = await getSiteInfo();

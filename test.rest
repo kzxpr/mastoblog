@@ -1,3 +1,11 @@
+GET https://todon.eu/.well-known/webfinger/?resource=acct:kzxpr@todon.eu
+
+###
+
+GET https://dev.hackademiet.dk/.well-known/webfinger/?resource=acct:test@dev.hackademiet.dk
+
+###
+
 POST https://hackademiet.dk/u/test/outbox
 Content-Type: application/json
 
@@ -5,10 +13,53 @@ Content-Type: application/json
 
 GET https://todon.eu/users/kzxpr
 Access-Control-Allow-Origin: *
-Content-Type: application/activity+json
+Accept: application/activity+json
+
+###
+
+GET https://todon.eu/users/kzxpr/collections/featured
+Accept: application/activity+json
+
+###
+
+GET https://todon.eu/users/kzxpr/followers?page=1
+Access-Control-Allow-Origin: *
+Accept: application/activity+json
+
+###
+
+GET https://www.w3.org/ns/activitystreams.jsonld#Public
+Access-Control-Allow-Origin: *
+Accept: application/activity+json
 
 ###
 
 GET https://yiny.org/accounts/djhnm
 Access-Control-Allow-Origin: *
 Content-Type: application/json
+
+###
+
+GET https://libranet.de/profile/kzxpr
+Access-Control-Allow-Origin: *
+Accept: application/activity+json
+
+###
+
+GET https://libranet.de/display/0b6b25a8-1163-b426-c4c1-3da542157652
+Accept: application/activity+json
+
+###
+
+GET https://libranet.de/profile/kzxpr
+Accept: application/activity+json
+
+###
+
+GET https://libranet.de/objects/0b6b25a8-1163-b9f7-b8f3-a17759794507
+Accept: application/activity+json
+
+###
+
+GET https://todon.eu/@kzxpr/109474743569775758
+Accept: application/activity+json

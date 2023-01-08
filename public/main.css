@@ -129,3 +129,12 @@ h2{
 .post--tags--list > li > a:hover {
     color: #555;
 }
+
+.followers--box{
+    display: flex;
+    flex-wrap: wrap;
+}
+.followers--icon{
+    display: flex;
+    width: 50px;
+}

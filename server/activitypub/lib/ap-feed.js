@@ -37,7 +37,7 @@ async function getOutboxFirst(outbox){
     });
 }
 
-function getLinkInWebfinger(webfinger, rel){
+function readLinkFromWebfinger(webfinger, rel){
     return new Promise((resolve, reject) => {
         for(let link of webfinger.links){
             if(link.rel==rel){
@@ -48,21 +48,27 @@ function getLinkInWebfinger(webfinger, rel){
     })
 }
 
-async function getObjectItem(url){
-    return new Promise((resolve, reject) => {
-        axios
-            .get(url)
-            .then(res => {
-                if(res.status==200){
-                    resolve(res.data);
-                }else{
-                    reject("getObjectItem not resolved (statuscode: "+res.status+")")
-                }
+async function getObjectItem(url, headers){
+    if(url && url != "https://www.w3.org/ns/activitystreams#Public"){
+        console.log("RUnning getObjectItem", url, headers)
+        return new Promise((resolve, reject) => {
+            axios({
+                method: 'GET',
+                headers,
+                url
             })
-            .catch(error => {
-                reject("Error in axios"+error)
-            });
-    });
+                .then(res => {
+                    if(res.status==200){
+                        resolve(res.data);
+                    }else{
+                        reject("getObjectItem not resolved (statuscode: "+res.status+")")
+                    }
+                })
+                .catch(error => {
+                    reject("Error in axios"+error)
+                });
+        });
+    }
 }
 
 async function getOutboxItems(url){
@@ -109,7 +115,7 @@ async function getStreamFromUserBase(stream, user_base){
 async function getWebfingerByFollow(follow){
     return new Promise(async (resolve, reject) => {
         const webfinger = await getWebfinger(follow).then((webfinger) => {
-        const self = getLinkInWebfinger(webfinger, "self")
+        const self = readLinkFromWebfinger(webfinger, "self")
             .then(async(self) => {
                 let obj = {};
                 obj[follow] = self.href;
@@ -182,7 +188,7 @@ async function makeMyFeed(req, res){
                     console.log(post)
                     if(post.type=="Announce"){
                         //console.log("ANNOUNCE",post)
-                        const test = await getObjectItem(post.object);
+                        const test = await getObjectItem(post.object, {});
                         //console.log("T",test)
                         //body.push(post);
                     }else if(post.type=="Create"){
@@ -211,4 +217,4 @@ async function makeMyFeed(req, res){
     })
 }
 
-module.exports = { makeMyFeed, getWebfinger, getStreamFromUserBase, getLinkInWebfinger }
+module.exports = { makeMyFeed, getWebfinger, getStreamFromUserBase, readLinkFromWebfinger, getObjectItem }
