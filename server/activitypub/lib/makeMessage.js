@@ -3,8 +3,10 @@ function makeMessage(uri, guid, params){
     var url_link;
     if(!url){
         url_link = uri+"/statuses/"+guid;
+        message_uri = uri+"/statuses"+guid;
     }else{
         url_link = url;
+        message_uri = url;
     }
     var cc_list = new Array(uri+"/followers")
     if(cc){
@@ -12,7 +14,7 @@ function makeMessage(uri, guid, params){
     }
     return {
         "@context": ["https://www.w3.org/ns/activitystreams"],
-        "id": uri+"/statuses/"+guid,
+        "id": message_uri,
         "type": "Note",
         "published": published,
         "attributedTo": uri,

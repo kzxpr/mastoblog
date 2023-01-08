@@ -2,7 +2,7 @@ GET https://todon.eu/.well-known/webfinger/?resource=acct:kzxpr@todon.eu
 
 ###
 
-GET https://dev.hackademiet.dk/.well-known/webfinger/?resource=acct:test@dev.hackademiet.dk
+GET https://dev2.hackademiet.dk/.well-known/webfinger/?resource=acct:thunderball@dev2.hackademiet.dk
 
 ###
 

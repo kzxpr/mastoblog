@@ -195,56 +195,6 @@ app.post("/followme", async (req, res) => {
     }
 })
 
-/*const { makeMyFeed, getWebfinger, getStreamFromUserBase, readLinkFromWebfinger, getObjectItem } = require("./server/activitypub/lib/ap-feed")
-
-
-
-app.get("/obj", async(req, res) => {
-    await getObjectItem("https://todon.eu/users/kzxpr/followers?page=4")
-        .then((result) => {
-            res.send(result)
-        })
-        .catch((e) => {
-            console.error(e)
-            res.sendStatus(500)
-        })
-})
-
-app.get("/profile", async(req, res) => {
-    //const server = "todon.eu";
-    const username = "kzxpr@todon.eu";
-    //const username = "NOISEBOB@todon.nl"
-    
-    lookupProfileLink(username)
-        .then((profile) => {
-            res.send(profile);
-        })
-        .catch((err) => {
-            console.error(err)
-            res.sendStatus(500)
-        })
-})
-
-
- 
- 
-
-app.get("/test", async(req, res) => {
-    //const server = "todon.eu";
-    //const username = "kzxpr@todon.eu";
-    //const username = "apdk2013@norrebro.space"
-    const username = "NOISEBOB@todon.nl"
-    
-    getProfile(username)
-        .then((profile) => {
-            res.send(profile);
-        })
-        .catch((err) => {
-            console.error(err)
-            res.sendStatus(500)
-        })
-})*/
-
 app.get(["/what"], async (req, res) => {
     const siteinfo = await getSiteInfo();
     const text = "<h2>What?</h2>Read more about <a href='https://joinmastodon.org/' target='_new'>Mastodon</a>.<h2>How to follow this site?</h2>Once you have found an instance you trust, and have registered write the name of your instance above (like www.mastodon.social - without 'www') and press 'Follow' to be redirected.";

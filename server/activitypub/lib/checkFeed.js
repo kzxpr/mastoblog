@@ -3,7 +3,7 @@ const axios = require('axios');
 const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 
-const { findOutbox, addAccount, lookupAccountByURI } = require("./addAccount")
+const { findOutbox, lookupAccountByURI } = require("./addAccount")
 const { getObjectItem } = require("./ap-feed")
 const { addMessage, unwrapMessage } = require("./addMessage");
 

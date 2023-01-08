@@ -1,4 +1,4 @@
-const db = require("./../../../knexfile")
+const db = require("../../../knexfile")
 const knex = require("knex")(db)
 crypto = require('crypto');
 
@@ -11,9 +11,6 @@ function wrapInCreate(obj, actor, follower, guid = ""){
   }else{
     guidCreate = guid;
   }
-  const dd = new Date();
-  
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
     
     let createMessage = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
@@ -32,7 +29,6 @@ function wrapInCreate(obj, actor, follower, guid = ""){
 function wrapInUpdate(object, actor, domain = "", follower = [], guid = ""){
   //  actor | object | target | result | origin | instrument 
   
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
     const random = crypto.randomBytes(16).toString('hex');
     let updateMessage = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
@@ -48,7 +44,6 @@ function wrapInUpdate(object, actor, domain = "", follower = [], guid = ""){
 function wrapInDelete(object, actor, domain = "", params, guid = ""){
   // Doesn't require to or cc
   //const { to, cc } = params;
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
@@ -64,7 +59,6 @@ function wrapInDelete(object, actor, domain = "", params, guid = ""){
 function wrapInAnnounce(object, actor, domain = "", params, guid = ""){
   // This wrap requires to or cc...
   const { to, cc } = params;
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
     
   let wrap = {}
   wrap["@context"] = ['https://www.w3.org/ns/activitystreams'];
@@ -82,7 +76,6 @@ function wrapInAnnounce(object, actor, domain = "", params, guid = ""){
 
 function wrapInFollow(object, actor, domain = "", follower = [], guid = ""){
   // This wrap DOESN'T require to or cc...
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
@@ -97,7 +90,6 @@ function wrapInFollow(object, actor, domain = "", follower = [], guid = ""){
 
 function wrapInUndo(object, actor, domain = "", follower = [], guid = "", params){
   const { to, cc } = params;
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
@@ -113,8 +105,6 @@ function wrapInUndo(object, actor, domain = "", follower = [], guid = "", params
 }
 
 function wrapInFlag(object, actor, domain = "", follower = [], guid = ""){
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
-    
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
       'type': 'Flag',
@@ -125,9 +115,7 @@ function wrapInFlag(object, actor, domain = "", follower = [], guid = ""){
     return message;
 }
 
-function wrapInLike(object, actor, domain = "", follower = [], guid = ""){
-  /* THIS FUNCTION SHOULD ALSO HANDLE "signatures" */
-    
+function wrapInLike(object, actor, domain = "", follower = [], guid = ""){    
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
       'guid': guid+"/like",

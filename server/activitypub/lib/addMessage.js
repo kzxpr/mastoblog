@@ -93,7 +93,7 @@ async function addMessage(message){
                                 console.error("ERROR on inserting apaddressee", addr)
                             })
                             .then((data) => {
-                                console.log("Added addressees for message"+message.id+"!")
+                                console.log("Added addressees for message",message.id+"!")
                             })
                         }
                         //await knex("apaddressee").insert([{ addressees, message_uri: message.id, createdAt: knex.fn.now() }])

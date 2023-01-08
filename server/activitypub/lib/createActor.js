@@ -1,6 +1,5 @@
 'use strict';
 const crypto = require('crypto');
-const createWebfinger = require("./createWebfinger")
 
 async function createActor(username, domain){
     return new Promise(async (resolve, reject) => {
@@ -24,7 +23,6 @@ async function createActor(username, domain){
                 if(err){
                     reject({ statusCode: 500, msg: err})
                 }else{
-                    //let webfingerRecord = createWebfinger(username, domain);
                     const apikey = crypto.randomBytes(16).toString('hex');
                     resolve({
                         username: username,

@@ -6,7 +6,7 @@ const knex = require("knex")(db)
       
 const { createActor } = require("./lib/createActor")
 const { createNote, createPage, createArticle } = require("./lib/createNote")
-const { wrapInCreate, wrapInUpdate, wrapInDelete, wrapInFlag, wrapInUndo, wrapInAnnounce, wrapInFollow, wrapInLike } = require("./lib/wrapInCreate")
+const { wrapInCreate, wrapInUpdate, wrapInDelete, wrapInFlag, wrapInUndo, wrapInAnnounce, wrapInFollow, wrapInLike } = require("./lib/wrappers")
 const { signAndSend } = require("./lib/signAndSend")
 const { makeMessage, makePage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage } = require("./lib/makeMessage")
 const { findInbox } = require("./lib/addAccount")
@@ -242,7 +242,7 @@ router.all("/:username/:activity/:object", (req, res) => {
     body += "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"' method='post'>"
     
     const { form_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
-    console.log("BO", obj)
+    //console.log("BO", obj)
     body += form_append;
     hidden += hidden_append;
     body += "<br><input type='submit' value='Update preview'>"

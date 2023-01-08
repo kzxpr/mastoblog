@@ -3,7 +3,7 @@ const knex = require("knex")(db)
 
 const { signAndSend } = require("./signAndSend")
 const { makeMessage } = require("./makeMessage")
-const { wrapInCreate } = require("./wrapInCreate")
+const { wrapInCreate } = require("./wrappers")
 const { findInbox } = require("./addAccount")
 
 async function sendLatestMessages(follower, user_uri){
@@ -12,7 +12,7 @@ async function sendLatestMessages(follower, user_uri){
         .then(async(messages) => {
             console.log("Found latestMessages:", messages.length)
             for(let message of messages){
-                const msg = makeMessage(user_uri, message.guid, { published: message.publishedAt, content: message.content, cc: follower });
+                const msg = makeMessage(user_uri, message.guid, { url: message.uri, published: message.publishedAt, content: message.content, cc: follower });
                 const wrapped = wrapInCreate(msg, user_uri, follower)
                 let inbox = await findInbox(follower)
                 let myURL = new URL(follower);

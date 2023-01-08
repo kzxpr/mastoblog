@@ -7,7 +7,7 @@ async function loadActorByUsername(username, domain){
         await knex("apaccounts").where("handle", "=", username+"@"+domain).first()
         .then((result) => {
             if (result === undefined) {
-                reject({statuscode: 404, msg: "No record found for "+username})
+                reject({statuscode: 404, msg: "No account found for "+username})
             } else {
                 let tempActor = {};
 

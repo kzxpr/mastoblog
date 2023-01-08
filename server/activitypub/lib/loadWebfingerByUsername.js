@@ -7,7 +7,7 @@ async function loadWebfingerByUsername(username, domain){
     const result = await knex("apaccounts").where("handle", "=", username+"@"+domain).select("username").first()
       .then((result) => {
         if (result === undefined) {
-          reject({statuscode: 404, msg: "No record found for "+username })
+          reject({statuscode: 404, msg: "No webfinger found for "+username })
         } else {
           let webfinger = {};
           webfinger.subject = "acct:"+username+"@"+domain;

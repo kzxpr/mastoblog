@@ -1,9 +1,9 @@
 const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 const crypto = require('crypto');
-const { getWebfinger, getStreamFromUserBase, getLinkInWebfinger, getObjectItem } = require("./ap-feed")
+const { getWebfinger, getObjectItem, readLinkFromWebfinger } = require("./ap-feed")
 
-var emoji = require('node-emoji')
+const emoji = require('node-emoji')
 
 async function addProfileObjToAccounts(account_uri, profile){
     return new Promise(async(resolve, reject) => {
@@ -53,7 +53,6 @@ async function lookupProfileObjByWebfinger(username){
 }
 
 function parseProfile(profile){
-    console.log("P", profile.preferredUsername, profile.name, encodeStr(profile.name))
     const privkey = null;
     const apikey = null;
     const homepage = profile.url
@@ -87,40 +86,6 @@ function parseProfile(profile){
     }
 }
 
-
-
-/*async function getProfile(username){
-    return new Promise(async(resolve, reject) => {
-        const user = await knex("apaccounts").where("username", "=", username)
-        .then(async(accounts) => {
-            if(accounts.length==1){
-                // ok
-                resolve(accounts[0])
-            }else if(accounts.length==0){
-                // lookup
-                const profile = await lookupProfileLink(username)
-                    .then(async(profile) => {
-                        await addProfileObjToAccounts(profile)
-                            .then((account) => {
-                                resolve(account);
-                            })
-                            .catch((err) => {
-                                reject(err)
-                            })
-                    })
-                    .catch((err) => {
-                        reject(err)
-                    })
-            }else{
-                reject("More than one account on username "+username)
-            }
-        })
-        .catch((err) => {
-            reject(err)
-        })
-    })
-}*/
-
 async function lookupAccountByURI(account_uri){
     return new Promise(async(resolve, reject) => {
         //console.log("I'm looking up URI", account_uri)
@@ -135,7 +100,6 @@ async function lookupAccountByURI(account_uri){
                 console.log("Zero accounts!")
                 await getObjectItem(account_uri, { Accept: 'application/activity+json' })
                 .then(async(profile) => {
-                    //console.log("GOT PROFILE", profile)
                     await addProfileObjToAccounts(account_uri, profile)
                         .then((account) => {
                             console.log("Here is account", account)
@@ -162,54 +126,6 @@ async function lookupAccountByURI(account_uri){
     })
 }
 
-async function addAccount(username, domain){
-    return new Promise(async(resolve, reject) => {
-        await getWebfinger(username+"@"+domain).then(async(webfinger) => {
-            console.log("FOUND WEBFINGER", webfinger)
-            const user_self = await getLinkInWebfinger(webfinger, "self")
-            const user_base = user_self.href;
-            console.log("FOUND USERBASE", user_base)
-            await getStreamFromUserBase("", user_base).then(async(profile) => {
-                const { id, type, preferredUsername, name, summary, url, published, publicKey, icon } = profile;
-                const account = { displayname: name, published, pubkey: publicKey.publicKeyPem, icon: icon.url, summary, homepage: url }
-                await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).first()
-                .then((accounts) => {
-                    resolve("ok")
-                    if(accounts){
-                        // update
-                    }else{
-                        // create getWebfinger
-                    }
-                })
-                .catch((e) => {
-                    reject("Some internal error", e)
-                })
-            })
-            .catch((e) => {
-                console.error("ERROR in fetching getStreamFromUserBase")
-            })
-        })
-    })
-    
-    /*
-    const result = await knex("apaccounts").where("username", "=", "@"+username+"@"+domain).select("username").first();
-    if (result === undefined) {
-        console.log("No record found for @"+username+"@"+domain);
-    } else {
-        // update followers
-        console.log("Add follower",follower)
-        try {
-            // update into DB
-            const guid = crypto.randomBytes(16).toString('hex');
-            let newFollowers = await knex("apfollowers").insert({"guid": guid, username, "follower": follower, createdAt: knex.fn.now() })
-            .onConflict(['user', 'follower'])
-            .ignore()
-        } catch(e) {
-            console.log('error', e);
-        }
-    }*/
-}
-
 async function findInbox(uri){
     return new Promise(async(resolve, reject) => {
         await knex("apaccounts").where("uri", "=", uri)
@@ -226,7 +142,6 @@ async function findInbox(uri){
                 console.log("Zero accounts!")
                 await getObjectItem(uri, { Accept: 'application/activity+json' })
                 .then(async(profile) => {
-                    //console.log("GOT PROFILE", profile)
                     await addProfileObjToAccounts(uri, profile)
                         .then((account) => {
                             console.log("Here is account", account)
@@ -285,7 +200,6 @@ async function findOutbox(uri){
                 console.log("Zero accounts!")
                 await getObjectItem(uri, { Accept: 'application/activity+json' })
                 .then(async(profile) => {
-                    //console.log("GOT PROFILE", profile)
                     await addProfileObjToAccounts(uri, profile)
                         .then((account) => {
                             console.log("Here is account", account)
@@ -319,4 +233,4 @@ function encodeStr(rawStr){
     return encodedStr;
 }
 
-module.exports = { addAccount, encodeStr, addProfileObjToAccounts, lookupProfileObjByWebfinger, parseProfile, lookupAccountByURI, findInbox, findOutbox }
+module.exports = { encodeStr, addProfileObjToAccounts, lookupProfileObjByWebfinger, parseProfile, lookupAccountByURI, findInbox, findOutbox }
