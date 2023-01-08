@@ -17,6 +17,7 @@ async function addProfileObjToAccounts(account_uri, profile){
                     ... parsedProfile,
                     createdAt: knex.fn.now()
                 })
+                .onConflict("uri").ignore()
                 .then(async(ids) => {
                     console.log("IDS", ids)
                     await knex("apaccounts")

@@ -84,6 +84,7 @@ async function addMessage(message){
                         ... parsedMessage,
                         createdAt: knex.fn.now()
                     })
+                    .onConflict("uri").ignore()
                     .then(async(ids) => {
                         console.log("Added message "+message.id)
                         const addressees = extractAddressee(message)
