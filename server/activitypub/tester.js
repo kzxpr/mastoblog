@@ -5,10 +5,9 @@ const db = require("./../../knexfile")
 const knex = require("knex")(db)
       
 const { createActor } = require("./lib/createActor")
-const { createNote, createPage, createArticle } = require("./lib/createNote")
 const { wrapInCreate, wrapInUpdate, wrapInDelete, wrapInFlag, wrapInUndo, wrapInAnnounce, wrapInFollow, wrapInLike } = require("./lib/wrappers")
 const { signAndSend } = require("./lib/signAndSend")
-const { makeMessage, makePage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage } = require("./lib/makeMessage")
+const { makeArticle, makeEvent, makeNote, makeQuestion, makeImage } = require("./lib/makeMessage")
 const { findInbox } = require("./lib/addAccount")
 const { addMessage } = require("./lib/addMessage")
 
@@ -91,10 +90,6 @@ router.get("/:username", (req, res) => {
     res.send(body)
 })
 
-function wrapper(){
-    return;
-}
-
 router.get("/:username/:activity", (req, res) => {
     const domain = req.app.get('domain');
     const { username, activity } = req.params;
@@ -120,7 +115,6 @@ function makeObject(object, params, body){
     const content = body.content !== undefined ? body.content : "This is the content of the message <i>including</i> HTML"
     const summary = body.summary !== undefined ? body.summary : "This is the summary text..."
     const name = body.name !== undefined ? body.name : "This is name - no HTML here"
-    const url = body.url !== undefined ? body.url : "https://lol.dk";
     const to = body.to !== undefined ? body.to : "https://todon.eu/users/kzxpr"
     const cc = body.cc !== undefined ? body.cc : "https://www.w3.org/ns/activitystreams#Public"
     const startTime = body.startTime !== undefined ? body.startTime : "2023-12-31T23:00:00-08:00";
@@ -132,6 +126,7 @@ function makeObject(object, params, body){
     const href = body.href !== undefined ? body.href : "https://"+domain+"/public/";
     const mediaType = body.mediaType !== undefined ? body.mediaType : "image/png";
     const manual_guid = body.manual_guid != "" ? body.manual_guid : guid;
+    const url = body.url !== undefined ? body.url : "https://"+domain+"/u/"+username+"/message/"+manual_guid;
     var body = "";
     var hidden = "";
     var obj;

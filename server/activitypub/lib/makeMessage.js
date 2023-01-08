@@ -44,8 +44,12 @@ function makeNote(username, domain, guid, params){
     obj["type"] = "Note"
     obj["published"] = published;
     obj["attributedTo"] = "https://"+domain+"/u/"+username;
-    obj["to"] = [ to ];
-    obj["cc"] = [ cc ];
+    if(to){
+        obj["to"] = [ to ];
+    }
+    if(cc){
+        obj["cc"] = [ cc ];
+    }
     obj["url"] = url_link;
     if(inReplyTo){
         obj["inReplyTo"] = inReplyTo;
@@ -54,31 +58,6 @@ function makeNote(username, domain, guid, params){
     obj["content"] = content;
     obj["contentMap"] = { "en": summary };
     return obj;
-}
-
-function makePage(username, domain, guid, params){
-    const { published, content, url } = params;
-    var url_link;
-    if(!url){
-        url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
-    }else{
-        url_link = url;
-    }
-    return {
-        "@context": ["https://www.w3.org/ns/activitystreams"],
-        "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
-        "type": "Page",
-        "published": published,
-        "attributedTo": "https://"+domain+"/u/"+username,
-        "to": [
-            "https://www.w3.org/ns/activitystreams#Public"
-        ],
-        "cc": [
-            "https://"+domain+"/u/"+username+"/followers"
-        ],
-        "url": url_link,
-        "content": content,
-    }
 }
 
 function makeArticle(username, domain, guid, params){
@@ -201,4 +180,4 @@ function makeImage(username, domain, guid, params){
     return obj;
 }
 
-module.exports = { makeMessage, makePage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage }
+module.exports = { makeMessage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage }

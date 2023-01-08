@@ -42,9 +42,12 @@ async function loadActorByUsername(username, domain){
                 // Added this followers URI for Pleroma compatibility, see https://github.com/dariusk/rss-to-activitypub/issues/11#issuecomment-471390881
                 // New Actors should have this followers URI but in case of migration from an old version this will add it in on the fly
                 if (tempActor.followers === undefined) {
-                    tempActor.followers = `https://${domain}/u/${username}/followers`;
+                    tempActor.followers = "https://"+domain+"/u/"+username+"/followers";
                 }
 
+                tempActor["endpoints"] = {
+                    "sharedInbox": "https://"+domain+"/u/inbox"
+                }
 
                 /* EXTENDED */
                 tempActor["icon"] = {};

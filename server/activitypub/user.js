@@ -5,18 +5,17 @@ const express = require('express'),
 
 const db = require("./../../knexfile")
 const knex = require("knex")(db)
+const clc = require('cli-color');
 
 const { loadActorByUsername } = require("./lib/loadActorByUsername")
 const { loadFollowersByUri, loadFollowingByUri } = require("./lib/loadFollowersByUsername")
 const { makeMessage } = require("./lib/makeMessage");
 const { wrapInCreate } = require('./lib/wrappers');
 const { sendAcceptMessage } = require("./lib/sendAcceptMessage")
-const { signAndSend, verifySignature } = require("./lib/signAndSend")
+const { verifySignature } = require("./lib/signAndSend")
 const { sendLatestMessages } = require("./lib/sendLatestMessages")
 const { addFollower } = require("./lib/addFollower")
-const { encodeStr, addProfileToAccounts, lookupProfileLink, parseProfile, getProfile, lookupAccountByURI } = require("./lib/addAccount")
-
-const clc = require('cli-color');
+const { encodeStr, lookupAccountByURI } = require("./lib/addAccount")
 
 const { startAPLog, endAPLog } = require("./lib/aplog");
 const { addMessage } = require('./lib/addMessage');
@@ -49,7 +48,7 @@ router.get('/:username/profile', async function (req, res) {
         //await endAPLog(aplog, "No username provided", 404)
         res.status(404);
     } else {
-        loadActorByUsername(name, domain)
+        await knex("apaccounts").where("handle", "=", username+"@"+domain)
         .then(async(data) => {
             //await endAPLog(aplog, data);
             res.send("Welcome to "+name+"'s profile!")
@@ -116,7 +115,7 @@ router.get('/:username/following', async function (req, res) {
     
 });
 
-/*router.get("/:username/messages/:messageid", async(req, res) => {
+router.get("/:username/messages/:messageid", async(req, res) => {
     const aplog = await startAPLog(req)
     const { username, messageid } = req.params;
     const domain = req.app.get('domain');
@@ -124,7 +123,7 @@ router.get('/:username/following', async function (req, res) {
         res.sendStatus(400)
         await endAPLog(aplog, "No message id", 400)
     }else{
-        const message = await knex("apmessages").where("guid", "=", messageid).first()
+        const message = await knex("apmessages").where("guid", "=", "https://"+domain+"/u/"+username+"/statuses/"+messageid).first()
         .then(async(m) => {
             if(m){
                 return m;
@@ -139,11 +138,11 @@ router.get('/:username/following', async function (req, res) {
             res.sendStatus(500)
         })
         let m = makeMessage(username, domain, message.guid, message.publishedAt, message.content);
-        const wrapped = wrapInCreate(m, "@"+username+"@"+domain, domain, [], message.guid)
+        const wrapped = wrapInCreate(m, username+"@"+domain, domain, [], message.guid)
         await endAPLog(aplog, wrapped)
         res.send(wrapped);
     }    
-})*/
+})
 
 router.post("/:username/outbox", async (req, res) => {
     const aplog = await startAPLog(req)
@@ -262,9 +261,9 @@ router.get("/:username/inbox", async(req, res) => {
     res.sendStatus(404)
 })
 
-router.post('/:username/inbox', async function (req, res) {
+router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     const aplog = await startAPLog(req)
-    const username = req.params.username;
+    const username = req.params.username || "!shared!";
     // pass in a name for an account, if the account doesn't exist, create it!
     let domain = req.app.get('domain');
     const myURL = new URL(req.body.actor);
@@ -287,8 +286,13 @@ router.post('/:username/inbox', async function (req, res) {
     if(reqtype === 'Create'){
         const objtype = req.body.object.type;
         if(objtype==="Note"){
-            console.log("I created a note saying",req.body.object.content)
-            addMessage(req.body.object)
+            await addMessage(req.body.object)
+            .then((d) => {
+                console.log("I created a note saying",req.body.object.content)
+            })
+            .catch((e) => {
+                console.error("ERROR in /inbox", e)
+            })
             /*if(sender){
                 const objwithoutsignature = Object.keys(req.body)
                     .filter(key => key !== 'signature')

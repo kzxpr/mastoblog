@@ -96,7 +96,6 @@ async function addMessage(message){
                                 console.log("Added addressees for message",message.id+"!")
                             })
                         }
-                        //await knex("apaddressee").insert([{ addressees, message_uri: message.id, createdAt: knex.fn.now() }])
                         resolve(ids)
                     })
                     .catch((e) => {
