@@ -5,6 +5,7 @@
 exports.up = function(knex) {
     return knex.schema
         .createTable('posts', function(t) {
+            t.charset('utf8');
             t.increments('id').unsigned().primary();
             t.string('title').notNull();
             t.longtext('body').notNull();
@@ -14,11 +15,13 @@ exports.up = function(knex) {
             t.dateTime('updatedAt').nullable();
         })
         .createTable('tags', function(t) {
+            t.charset('utf8');
             t.increments('id').unsigned().primary();
             t.integer('hidden').defaultTo(0);
             t.string('name').notNull();
         })
         .createTable('postvstag', function(t) {
+            t.charset('utf8');
             t.increments('id').unsigned().primary();
             t.integer('post_id').notNull();
             t.integer('tag_id').notNull();

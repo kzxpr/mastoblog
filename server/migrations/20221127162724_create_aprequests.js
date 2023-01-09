@@ -4,6 +4,7 @@
  */
 exports.up = function(knex) {
     return knex.schema.createTable('aprequests', function(t) {
+        t.charset('utf8');
         t.increments('id').unsigned().primary();
         t.string('method').notNull();
         t.string('url').notNull();

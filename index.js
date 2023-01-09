@@ -168,9 +168,9 @@ app.get("/tjek", async(req, res) => {
 app.get("/feed", async (req, res) => {
     const siteinfo = await getSiteInfo();
     const messages = await Message.query().orderBy("publishedAt", "desc").withGraphFetched("[creator.^1, addressees.^1]")
-    for(let m of messages){
-        console.log("FOUND ",m.addressees)
-    }
+    //for(let m of messages){
+        //console.log("FOUND ",m.addressees)
+    //}
     
     res.render("feed", { ...siteinfo, messages });
 })

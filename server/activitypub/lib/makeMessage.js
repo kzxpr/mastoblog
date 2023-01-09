@@ -89,6 +89,31 @@ function makeArticle(username, domain, guid, params){
     }
 }
 
+function makePage(username, domain, guid, params){
+    const { published, content, url } = params;
+    var url_link;
+    if(!url){
+        url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
+    }else{
+        url_link = url;
+    }
+    return {
+        "@context": ["https://www.w3.org/ns/activitystreams"],
+        "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
+        "type": "Page",
+        "published": published,
+        "attributedTo": "https://"+domain+"/u/"+username,
+        "to": [
+            "https://www.w3.org/ns/activitystreams#Public"
+        ],
+        "cc": [
+            "https://"+domain+"/u/"+username+"/followers"
+        ],
+        "url": url_link,
+        "content": content,
+    }
+}
+
 function makeEvent(username, domain, guid, params){
     const { startTime, endTime, name, published, url, summary, to, cc } = params;
     var url_link;
@@ -180,4 +205,4 @@ function makeImage(username, domain, guid, params){
     return obj;
 }
 
-module.exports = { makeMessage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage }
+module.exports = { makeMessage, makeArticle, makeEvent, makeNote, makeQuestion, makeImage, makePage }

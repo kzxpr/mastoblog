@@ -1,6 +1,6 @@
 const db = require("./../../../knexfile")
 const knex = require("knex")(db)
-const { encodeStr } = require("./addAccount")
+const { encodeStr, findFollowers } = require("./addAccount")
 
 function unwrapMessage(obj){
     //console.log("UNWRAP", obj)
@@ -42,8 +42,7 @@ function parseAddressees(arr, field){
     for(let user_uri of arr){
         list.push({
             account_uri: user_uri,
-            field,
-            type: '0'
+            field
         })
     }
     return list
@@ -79,23 +78,69 @@ async function addMessage(message){
                     if(parsedMessage.publishedAt===null){
                         parsedMessage.publishedAt=knex.fn.now();
                     }
+                    
+                    // Extract the URIs in 'to', 'cc' and 'bcc' into one array (addressees)
+                    const addressees = extractAddressee(message)
+
+                    // check for public group addressees
+                    const public_test = addressees.includes("https://www.w3.org/ns/activitystreams#Public")
+
+                    // find the creator's follower_uri, save it to "followshare_addr" and check for follower group in addressees
+                    const { followshare_test, followshare_addr } = await findFollowers(parsedMessage.attributedTo)
+                    .then((follower_uri) => {
+                        console.log("addMessage resolved follower_uri as:",follower_uri)
+                        return {
+                            followshare_test: addressees.includes(follower_uri),
+                            followshare_addr: follower_uri
+                        };
+                    })
+                    .catch((e) => {
+                        console.error("ERROR in addMessage resolving follower_uri")
+                        return {
+                            followshare_test: false,
+                            followshare_addr: ""
+                        }
+                    })
+
+                    // Validate results of public_test and followshare_test
+                    var public = 0;
+                    var followshare = 0;
+                    if(public_test){
+                        public = 1;
+                    }
+                    if(followshare_test){
+                        followshare = 1;
+                    }
+
+                    // Insert parsed message into apmessage
                     await knex("apmessages").insert({
                         guid,
                         ... parsedMessage,
+                        public,
+                        followshare,
                         createdAt: knex.fn.now()
                     })
                     .onConflict("uri").ignore()
                     .then(async(ids) => {
-                        console.log("Added message "+message.id)
-                        const addressees = extractAddressee(message)
-                        for(let addr of addressees){
-                            await knex("apaddressee").insert({ ...addr, message_uri: message.id, createdAt: knex.fn.now() })
-                            .catch((e) => {
-                                console.error("ERROR on inserting apaddressee", addr)
-                            })
-                            .then((data) => {
-                                console.log("Added addressees for message",message.id+"!")
-                            })
+                        // I'm wrapping in this in if(ids), because I think an "ignore" would actually also trigger a "then"
+                        if(ids){
+                            console.log("Added message "+message.id)
+                            for(let addr of addressees){
+                                // evaluate the type of address (0 = normal, 1 = public group, 2 = follower group)
+                                var type = 0;
+                                if(addr.account_uri=="https://www.w3.org/ns/activitystreams#Public"){
+                                    type = 1;
+                                }else if(addr.account_uri==followshare_addr){
+                                    type = 2;
+                                }
+                                await knex("apaddressee").insert({ ...addr, type, message_uri: message.id, createdAt: knex.fn.now() })
+                                .catch((e) => {
+                                    console.error("ERROR on inserting apaddressee", addr)
+                                })
+                                .then((data) => {
+                                    console.log("Added addressees for message",message.id+"!")
+                                })
+                            }
                         }
                         resolve(ids)
                     })

@@ -5,6 +5,7 @@
 exports.up = function(knex) {
     return knex.schema
         .createTable('apactivities', function(t) {
+            t.charset('utf8');
             t.increments('id').unsigned().primary();
             t.string('uri').notNull();
             t.dateTime('createdAt').notNull();

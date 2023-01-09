@@ -5,6 +5,7 @@
 exports.up = function(knex) {
     return knex.schema
         .createTable('apaddressee', function(t) {
+            t.charset('utf8');
             t.increments('id').unsigned().primary();
             t.string('message_uri').notNull();
             t.string('field').notNull();

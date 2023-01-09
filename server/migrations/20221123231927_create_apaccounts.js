@@ -4,6 +4,7 @@
  */
 exports.up = function(knex) {
     return knex.schema.createTable('apaccounts', function(t) {
+        t.charset('utf8');
         t.increments('id').unsigned().primary();
         t.string('username').notNull();
         t.text('privkey').notNull();

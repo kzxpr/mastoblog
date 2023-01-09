@@ -4,6 +4,7 @@
  */
 exports.up = function(knex) {
     return knex.schema.createTable('config', function(t) {
+        t.charset('utf8');
         t.increments('id').unsigned().primary();
         t.string('key').notNull();
         t.string('value').nullable();

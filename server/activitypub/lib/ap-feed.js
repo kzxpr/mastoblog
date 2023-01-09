@@ -8,14 +8,17 @@ async function getWebfinger(address){
         axios
             .get(url)
             .then(res => {
-                if(res.status==200){
+                //if(res.status==200){
                     resolve(res.data);
-                }else{
+                /*}else{
                     reject("Not resolved (statuscode: "+res.status+")")
-                }
+                }*/
             })
             .catch(error => {
-                reject("Error in axios"+error)
+                if(error.response){
+                    console.log("Received "+error.response.status)
+                }
+                reject("Error in /getWebfinger in axios"+error)
             });
     });
 }
@@ -41,14 +44,17 @@ async function getObjectItem(url, headers){
                 url
             })
                 .then(res => {
-                    if(res.status==200){
+                    //if(res.status==200){
                         resolve(res.data);
-                    }else{
+                    /*}else{
                         reject("getObjectItem not resolved (statuscode: "+res.status+")")
-                    }
+                    }*/
                 })
                 .catch(error => {
-                    reject("Error in axios"+error)
+                    if(error.response){
+                        console.log("Received "+error.response.status)
+                    }
+                    reject("Error with axios in /getObjectItem"+error)
                 });
         });
     }

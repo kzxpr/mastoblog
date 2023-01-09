@@ -8,9 +8,9 @@ const emoji = require('node-emoji')
 async function addProfileObjToAccounts(account_uri, profile){
     return new Promise(async(resolve, reject) => {
         if(account_uri && account_uri != "https://www.w3.org/ns/activitystreams#Public"){
-            console.log("PROF", profile, account_uri)
+            //console.log("PROF", profile, account_uri)
             const parsedProfile = parseProfile(profile);
-            console.log("PARSED", parsedProfile)
+            //console.log("PARSED", parsedProfile)
             await knex("apaccounts")
                 .insert({
                     uri: account_uri,
@@ -19,12 +19,12 @@ async function addProfileObjToAccounts(account_uri, profile){
                 })
                 .onConflict("uri").ignore()
                 .then(async(ids) => {
-                    console.log("IDS", ids)
+                    //console.log("IDS", ids)
                     await knex("apaccounts")
                         .where("id", "=", ids[0])
                         .first()
                         .then((result) => {
-                            console.log("OK", result)
+                            //console.log("OK", result)
                             resolve(result)
                         })
                         .catch((err) => {
@@ -38,8 +38,8 @@ async function addProfileObjToAccounts(account_uri, profile){
                     reject(err);
                 })
         }else{
-            console.warn("No account_uri provided")
-            resolve("No account_uri provided")
+            console.warn("No or invalid account_uri provided")
+            reject("No or invalid account_uri provided")
         }
     })
 }
@@ -56,7 +56,7 @@ async function lookupProfileObjByWebfinger(username){
 function parseProfile(profile){
     const privkey = null;
     const apikey = null;
-    const homepage = profile.url
+    const profile_link = profile.url
         ? profile.url
         : null;
     const username = profile.preferredUsername;
@@ -68,6 +68,10 @@ function parseProfile(profile){
         : "";
     const inbox_uri = profile.inbox;
     const outbox_uri = profile.outbox;
+    const followers_uri = profile.followers;
+    const following_uri = profile.following;
+    const featured_uri = profile.featured;
+    const tags_uri = profile.featuredTags;
     var displayname = encodeStr(profile.preferredUsername);
     if(profile.name){
         displayname = encodeStr(profile.name);
@@ -83,7 +87,8 @@ function parseProfile(profile){
         : null;
     
     return {
-        username, privkey, apikey, homepage, pubkey, displayname, summary, icon, image, handle, inbox_uri, outbox_uri
+        username, privkey, apikey, profile_link, pubkey, displayname, summary, icon, image, handle,
+        inbox_uri, outbox_uri, followers_uri, following_uri, featured_uri, tags_uri
     }
 }
 
@@ -127,7 +132,7 @@ async function lookupAccountByURI(account_uri){
     })
 }
 
-async function findInbox(uri){
+/*async function findInbox(uri){
     return new Promise(async(resolve, reject) => {
         await knex("apaccounts").where("uri", "=", uri)
         .then(async(accounts) => {
@@ -164,32 +169,32 @@ async function findInbox(uri){
             reject("Error in findInbox")
         })
     });
-}
+}*/
 
-async function findOutbox(uri){
+async function findProfileItem(uri, db_field, profile_field){
     return new Promise(async(resolve, reject) => {
         await knex("apaccounts").where("uri", "=", uri)
         .then(async(accounts) => {
             if(accounts.length==1){
-                if(accounts[0].outbox_uri != "" && accounts[0].outbox_uri!==null){
-                    resolve(accounts[0].outbox_uri)
+                if(accounts[0][db_field] != "" && accounts[0][db_field]!==null){
+                    resolve(accounts[0][db_field])
                 }else{
-                    console.log("No outbox_uri on user "+uri)
+                    console.log("No "+db_field+" on user "+uri)
                     await getObjectItem(uri, { Accept: 'application/activity+json' })
                         .then(async(profile) => {
-                            if(profile.outbox){
-                                const outbox_uri = profile.outbox;
-                                await knex("apaccounts").update({ outbox_uri: outbox_uri }).where("uri", "=", uri)
+                            if(profile[profile_field]){
+                                const uri_value = profile[profile_field];
+                                await knex("apaccounts").update(db_field, uri_value).where("uri", "=", uri)
                                 .then((data) => {
-                                    resolve(outbox_uri);
+                                    resolve(uri_value);
                                 })
                                 .catch((e) => {
-                                    console.error("ERROR in findOutbox: Adding outbox "+outbox_uri+" to "+uri)
-                                    reject("ERROR in findOutbox adding outbox to user")
+                                    console.error("ERROR in findProfileItem: Adding "+profile_field+" "+uri_value+" to "+uri)
+                                    reject("ERROR in findProfileItem adding "+profile_field+" to user")
                                 })
                             }else{
-                                console.error("No outbox on profile for user "+uri)
-                                reject("No outbox on profile for user "+uri)
+                                console.error("No "+profile_field+" on profile for user "+uri)
+                                reject("No "+profile_field+" on profile for user "+uri)
                             }
                         })
                         .catch((e) => {
@@ -204,7 +209,7 @@ async function findOutbox(uri){
                     await addProfileObjToAccounts(uri, profile)
                         .then((account) => {
                             console.log("Here is account", account)
-                            resolve(account.outbox_uri);
+                            resolve(account[db_field]);
                         })
                         .catch((err) => {
                             console.error(err)
@@ -218,10 +223,48 @@ async function findOutbox(uri){
             }
         })
         .catch((e) => {
-            console.error("findOutbox ERROR:",e)
-            reject("Error in findOutbox")
+            console.error("findProfileItem ERROR:",e)
+            reject("Error in findProfileItem")
         })
     });
+}
+
+async function findOutbox(uri){
+    return new Promise(async(resolve, reject) => {
+        await findProfileItem(uri, "outbox_uri", "outbox")
+        .then((data) => {
+            console.log("PERFECT RESOLVE", data)
+            resolve(data)
+        })
+        .catch((e) => {
+            console.error("WRONG RESOLVE", e)
+            reject("ERROR in findOutbox", e)
+        })
+    })
+}
+
+async function findFollowers(uri){
+    return new Promise(async(resolve, reject) => {
+        await findProfileItem(uri, "followers_uri", "followers")
+        .then((data) => {
+            resolve(data)
+        })
+        .catch((e) => {
+            reject("ERROR in findFollowers", e)
+        })
+    })
+}
+
+async function findInbox(uri){
+    return new Promise(async(resolve, reject) => {
+        await findProfileItem(uri, "inbox_uri", "inbox")
+        .then((data) => {
+            resolve(data)
+        })
+        .catch((e) => {
+            reject("ERROR in findInbox", e)
+        })
+    })
 }
 
 function encodeStr(rawStr){
@@ -234,4 +277,4 @@ function encodeStr(rawStr){
     return encodedStr;
 }
 
-module.exports = { encodeStr, addProfileObjToAccounts, lookupProfileObjByWebfinger, parseProfile, lookupAccountByURI, findInbox, findOutbox }
+module.exports = { encodeStr, addProfileObjToAccounts, lookupProfileObjByWebfinger, parseProfile, lookupAccountByURI, findInbox, findOutbox, findFollowers }

@@ -13,6 +13,12 @@ Remember to add these in Nginx:
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
+## MySQL database
+
+Database is set up to run utf8. To change a table, do:
+
+    ALTER TABLE apactivities CONVERT TO CHARACTER SET utf8;
+
 ## ActivityPub requires SSL to test
 
 ### Run through SSH tunnel:
