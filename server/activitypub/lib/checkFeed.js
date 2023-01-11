@@ -10,7 +10,7 @@ const { addMessage, unwrapMessage } = require("./addMessage");
 
 function getFollowed(){
     // this should somehow exclude users on the same server.....?
-    return ["https://todon.eu/users/kzxpr"];//, "https://libranet.de/profile/kzxpr"]
+    return ["https://todon.eu/users/kzxpr", "https://todon.nl/users/NOISEBOB", "https://kolektiva.social/users/glaspest", "https://mastodon.social/users/NilsenMuseum"];//, "https://libranet.de/profile/kzxpr"]
     //return ["AMOK@todon.nl", "kzxpr@todon.eu"];//, "NOISEBOB@todon.nl", "djhnm@www.yiny.org", "NilsenMuseum@mastodon.social", "pxsx@todon.nl"]; //"asbjorn@norrebro.space", "apconf@conf.tube", "schokoladen@mobilize.berlin", "kzasdxpr@todon.eu"];
 }
 
@@ -49,16 +49,18 @@ async function checkFeed(req, res){
         // NOW IT HAS IMPORTED ALL (NEW) MESSAGES, THEN LOOKUP NEW ADDRESSEES AND ADD THEIR ACCOUNTS
         await knex("apaddressee").select("account_uri").groupBy("account_uri")
             .then(async(addressees) => {
-                console.log("ALL ADDREESEES", addressees)
+                //console.log("ALL ADDREESEES", addressees)
                 for(let addressee of addressees){
-                    const addressee_uri = addressee.account_uri;
-                    await lookupAccountByURI(addressee_uri)
-                    .then((data) => {
-                        console.log("ok")
-                    })
-                    .catch((e) => {
-                        console.error("ERROR in checkFeed for lookupAccountByURI on "+addressee_uri)
-                    })
+                    if(addressee.account_uri != ""){
+                        const addressee_uri = addressee.account_uri;
+                        await lookupAccountByURI(addressee_uri)
+                            .then((data) => {
+                                //console.log("ok")
+                            })
+                            .catch((e) => {
+                                console.error("ERROR in checkFeed for lookupAccountByURI on "+addressee_uri)
+                            })
+                    }
                 }
             })
             .catch((e) => {

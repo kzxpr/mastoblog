@@ -4,7 +4,7 @@ const app = express();
 const port = process.env.PORT || 3011;
 
 /* KNEX */
-const { Tag, Post, Account, Message } = require("./server/models/db")
+const { Tag, Account, Message } = require("./server/models/db")
 const db = require("./knexfile")
 const knex = require("knex")(db)
 
@@ -106,6 +106,7 @@ app.use('/public', express.static(__dirname + '/public'));
 const exphbs  = require('express-handlebars');
 const config = {
 	extname: '.hbs',
+    partialsDir: __dirname + '/views/partials/'
 };
 const hbs = exphbs.create(config);
 
@@ -167,7 +168,10 @@ app.get("/tjek", async(req, res) => {
 
 app.get("/feed", async (req, res) => {
     const siteinfo = await getSiteInfo();
-    const messages = await Message.query().orderBy("publishedAt", "desc").withGraphFetched("[creator.^1, addressees.^1]")
+    const messages = await Message.query()
+        .whereNull("inReplyTo")
+        .orderBy("publishedAt", "desc")
+        .withGraphFetched("[creator.^1, addressees.^1, attachments.^1, tags.^1, replies.[creator,attachments]]")
     //for(let m of messages){
         //console.log("FOUND ",m.addressees)
     //}
@@ -219,7 +223,7 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
     var pagetitle="";
 
     var posts;
-    if(postid!==null){
+    /*if(postid!==null){
         posts = await Post.query().where("id", "=", postid).andWhere("hidden", "=", 0).orderBy("createdAt", "desc").withGraphFetched("tags.^1")
         pagetitle = posts[0].title;
     }else if(tagname!==null){
@@ -228,11 +232,11 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
         })
     }else{
         posts = await Post.query().where("hidden", "=", 0).orderBy("createdAt", "desc").offset(pageno*postprpage).limit(postprpage).withGraphFetched("tags.^1")
-    }
+    }*/
 
     const siteinfo = await getSiteInfo();
 
-    const tags = await Tag.query().where("hidden", "=", 0).orderBy("name", "asc")
+    const tags = await Tag.query().orderBy("name", "asc")
 
     res.render("blog",
         {

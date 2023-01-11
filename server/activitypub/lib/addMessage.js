@@ -1,6 +1,8 @@
 const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 const { encodeStr, findFollowers } = require("./addAccount")
+const { addAttachment } = require("./addAttachment")
+const { addTag } = require("./addTag")
 
 function unwrapMessage(obj){
     //console.log("UNWRAP", obj)
@@ -34,7 +36,10 @@ function parseMessage(message){
     const name = message.name
         ? encodeStr(message.name)
         : null;
-    return { uri, type, summary, inReplyTo, publishedAt, url, attributedTo, content, name }
+    const replies_uri = ((message.replies) && (message.replies.id))
+        ? message.replies.id
+        : null;
+    return { uri, type, summary, inReplyTo, publishedAt, url, attributedTo, content, name, replies_uri }
 }
 
 function parseAddressees(arr, field){
@@ -75,22 +80,30 @@ async function addMessage(message){
                 if(rows.length==0){
                     const guid = crypto.randomBytes(16).toString('hex');
                     const parsedMessage = parseMessage(message);
+                    if(parsedMessage.type=="Announce"){
+                        console.warning("WAS SENT ANNONCE - IT WAS IGNORED")
+                        reject("THIS IS AN ANNOUNCE!!!!")
+                    }
                     if(parsedMessage.publishedAt===null){
                         parsedMessage.publishedAt=knex.fn.now();
                     }
                     
                     // Extract the URIs in 'to', 'cc' and 'bcc' into one array (addressees)
                     const addressees = extractAddressee(message)
+                    const address_list = addressees.map((addr) => {
+                        return addr.account_uri;
+                    })
+                    //console.log("FOUND ADDR", address_list)
 
                     // check for public group addressees
-                    const public_test = addressees.includes("https://www.w3.org/ns/activitystreams#Public")
+                    const public_test = address_list.includes("https://www.w3.org/ns/activitystreams#Public")
 
                     // find the creator's follower_uri, save it to "followshare_addr" and check for follower group in addressees
                     const { followshare_test, followshare_addr } = await findFollowers(parsedMessage.attributedTo)
                     .then((follower_uri) => {
                         console.log("addMessage resolved follower_uri as:",follower_uri)
                         return {
-                            followshare_test: addressees.includes(follower_uri),
+                            followshare_test: address_list.includes(follower_uri),
                             followshare_addr: follower_uri
                         };
                     })
@@ -125,6 +138,8 @@ async function addMessage(message){
                         // I'm wrapping in this in if(ids), because I think an "ignore" would actually also trigger a "then"
                         if(ids){
                             console.log("Added message "+message.id)
+
+                            // ADDRESSEES
                             for(let addr of addressees){
                                 // evaluate the type of address (0 = normal, 1 = public group, 2 = follower group)
                                 var type = 0;
@@ -134,12 +149,39 @@ async function addMessage(message){
                                     type = 2;
                                 }
                                 await knex("apaddressee").insert({ ...addr, type, message_uri: message.id, createdAt: knex.fn.now() })
-                                .catch((e) => {
-                                    console.error("ERROR on inserting apaddressee", addr)
-                                })
-                                .then((data) => {
-                                    console.log("Added addressees for message",message.id+"!")
-                                })
+                                    .onConflict(["message_uri", "account_uri"]).ignore()
+                                    .then((data) => {
+                                        console.log("Added addressees for message",message.id+"!")
+                                    })
+                                    .catch((e) => {
+                                        console.error("ERROR on inserting apaddressee", addr)
+                                    })
+                            }
+
+                            // ATTACHMENTS
+                            if(message.attachment && message.attachment.length>0){
+                                for(let attachment of message.attachment){
+                                    await addAttachment(message.id, attachment)
+                                        .then((data) => {
+                                            //console.log("Added attachment")
+                                        })
+                                        .catch((e) => {
+                                            console.error("ERROR in adding attachment", attachment)
+                                        })
+                                }
+                            }
+
+                            // TAGS
+                            if(message.tag && message.tag.length>0){
+                                for(let tag of message.tag){
+                                    await addTag(message.id, tag)
+                                        .then((data) => {
+                                            //console.log("Added tag")
+                                        })
+                                        .catch((e) => {
+                                            console.error("ERROR in adding tag", tag)
+                                        })
+                                }
                             }
                         }
                         resolve(ids)

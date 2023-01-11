@@ -6,6 +6,11 @@ GET https://dev2.hackademiet.dk/.well-known/webfinger/?resource=acct:thunderball
 
 ###
 
+GET https://todon.eu/users/kzxpr/outbox
+Accept: application/activity+json
+
+###
+
 POST https://hackademiet.dk/u/test/outbox
 Content-Type: application/json
 
@@ -19,6 +24,11 @@ Accept: application/activity+json
 
 GET https://todon.eu/users/kzxpr/collections/featured
 Accept: application/activity+json
+
+###
+
+GET https://todon.eu/users/kzxpr/statuses/109661420743455368
+Accept: application/json
 
 ###
 

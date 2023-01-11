@@ -8,7 +8,11 @@ const { findInbox } = require("./addAccount")
 
 async function sendLatestMessages(follower, user_uri){
     return new Promise(async(resolve, reject) => {
-        await knex("apmessages").where("attributedTo", user_uri).limit(10)
+        await knex("apmessages").where("attributedTo", user_uri)
+        .andWhere(function(){
+            this.where("public", "=", 1).orWhere("followshare", "=", 1)
+        })
+        .limit(10)
         .then(async(messages) => {
             console.log("Found latestMessages:", messages.length)
             for(let message of messages){
@@ -19,7 +23,7 @@ async function sendLatestMessages(follower, user_uri){
                 let targetDomain = myURL.hostname;
                 await signAndSend(wrapped, user_uri, targetDomain, inbox)
                 .then((data) => {
-                    console.log("SEND NOTE RESPONSE",data)
+                    console.log("SEND LATEST NOTE RESPONSE",data)
                 })
                 .catch((err) => {
                     reject({err})

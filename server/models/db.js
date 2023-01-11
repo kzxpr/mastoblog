@@ -5,6 +5,18 @@ const knex = require('knex')(db)
 
 Model.knex(knex)
 
+class Attachment extends Model {
+	static get tableName() {
+		return 'apattachments';
+	}
+}
+
+class Tag extends Model {
+	static get tableName() {
+		return 'aptags';
+	}
+}
+
 class Account extends Model {
 	static get tableName() {
 		return 'apaccounts';
@@ -67,12 +79,36 @@ class Message extends Model {
 					},
 					to: 'apaccounts.uri'
 				}
+			},
+			attachments: {
+				relation: Model.HasManyRelation,
+				modelClass: Attachment,
+				join: {
+					from: 'apmessages.uri',
+					to: 'apattachments.message_uri'
+				}
+			},
+			tags: {
+				relation: Model.HasManyRelation,
+				modelClass: Tag,
+				join: {
+					from: 'apmessages.uri',
+					to: 'aptags.message_uri'
+				}
+			},
+			replies: {
+				relation: Model.HasManyRelation,
+				modelClass: Message,
+				join: {
+					from: 'apmessages.uri',
+					to: 'apmessages.inReplyTo'
+				}
 			}
 		}
 	}
 }
 
-class Post extends Model {
+/*class Post extends Model {
 	static get tableName() {
 		return 'posts';
 	}
@@ -95,7 +131,7 @@ class Post extends Model {
 	}
 }
 
-class Tag extends Model {
+/*class Tag extends Model {
 	static get tableName() {
 		return 'tags';
 	}
@@ -116,6 +152,6 @@ class Tag extends Model {
 			}
 		}
 	}
-}
+}*/
 
-module.exports = { Post, Tag, Account, Message }
+module.exports = { Tag, Account, Message, Attachment }

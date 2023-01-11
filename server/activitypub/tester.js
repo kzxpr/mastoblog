@@ -7,7 +7,7 @@ const knex = require("knex")(db)
 const { createActor } = require("./lib/createActor")
 const { wrapInCreate, wrapInUpdate, wrapInDelete, wrapInFlag, wrapInUndo, wrapInAnnounce, wrapInFollow, wrapInLike } = require("./lib/wrappers")
 const { signAndSend } = require("./lib/signAndSend")
-const { makeArticle, makeEvent, makeNote, makeQuestion, makeImage } = require("./lib/makeMessage")
+const { makeArticle, makeEvent, makeNote, makeQuestion, makeImage, handleAddress } = require("./lib/makeMessage")
 const { findInbox } = require("./lib/addAccount")
 const { addMessage } = require("./lib/addMessage")
 
@@ -116,7 +116,7 @@ function makeObject(object, params, body){
     const summary = body.summary !== undefined ? body.summary : "This is the summary text..."
     const name = body.name !== undefined ? body.name : "This is name - no HTML here"
     const to = body.to !== undefined ? body.to : "https://todon.eu/users/kzxpr"
-    const cc = body.cc !== undefined ? body.cc : "https://www.w3.org/ns/activitystreams#Public"
+    const cc = body.cc !== undefined ? body.cc : ""
     const startTime = body.startTime !== undefined ? body.startTime : "2023-12-31T23:00:00-08:00";
     const endTime = body.endTime !== undefined ? body.endTime : "2024-01-01T06:00:00-08:00";
     const inReplyTo = body.inReplyTo !== undefined ? body.inReplyTo : "";
@@ -127,6 +127,10 @@ function makeObject(object, params, body){
     const mediaType = body.mediaType !== undefined ? body.mediaType : "image/png";
     const manual_guid = body.manual_guid != "" ? body.manual_guid : guid;
     const url = body.url !== undefined ? body.url : "https://"+domain+"/u/"+username+"/message/"+manual_guid;
+    const public = ((body.public !== undefined) && (body.public != "false"))
+        ? true : false;
+    const followshare = ((body.followshare !== undefined) && (body.followshare != "false"))
+        ? true : false;
     var body = "";
     var hidden = "";
     var obj;
@@ -137,12 +141,24 @@ function makeObject(object, params, body){
     body += "<tr><td width='120'>guid:<td> <input type='text' name='manual_guid' value='"+manual_guid+"' style='width: 100%; max-width: 300px;'><td>(leave blank to generate later)</tr>";
     body += "<tr><td>attributed:<td> "+attributedTo+"<td></tr>"
     body += "<tr><td>published:<td> "+published+"<td>(updates automatically)</tr>"
-    body += "<tr><td>to:<td> <input type='text' name='to' value='"+to+"' style='width: 100%; max-width: 300px;'><td>(url)</tr>";
-    body += "<tr><td>cc:<td> <input type='text' name='cc' value='"+cc+"' style='width: 100%; max-width: 300px;'><td>(url)</tr>";
+    body += "<tr><td>to:<td> <input type='text' name='to' value='"+to+"' style='width: 100%; max-width: 300px;'><td>(url - separate with space)</tr>";
+    body += "<tr><td>public:<td> <input type='checkbox' name='public' value='yes'";
+    if(public){
+        body += "checked"
+    }
+    body += "><td>(include public)</tr>";
+    body += "<tr><td>cc:<td> <input type='text' name='cc' value='"+cc+"' style='width: 100%; max-width: 300px;'><td>(url - separate with space)</tr>";
+    body += "<tr><td>follower:<td> <input type='checkbox' name='followshare' value='yes' ";
+    if(followshare){
+        body += "checked"
+    }
+    body += "><td>(include user's follower)</tr>";
     body += "<tr><td>inReplyTo:<td> <input type='text' name='inReplyTo' value='"+inReplyTo+"' style='width: 100%; max-width: 300px;'><td>(url - if using this remember to include owner in 'to')</tr>";
     //
     hidden += "<input type='hidden' name='to' value='"+to+"'>";
+    hidden += "<input type='hidden' name='public' value='"+public+"'>";
     hidden += "<input type='hidden' name='cc' value='"+cc+"'>";
+    hidden += "<input type='hidden' name='followshare' value='"+followshare+"'>";
     hidden += "<input type='hidden' name='inReplyTo' value='"+inReplyTo+"'>";
     hidden += "<input type='hidden' name='manual_guid' value='"+manual_guid+"'>";
     
@@ -159,7 +175,7 @@ function makeObject(object, params, body){
         //hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = makeNote(username, domain, manual_guid, { published, name, content, to, cc, url, summary, inReplyTo })
+        obj = makeNote(username, domain, manual_guid, { published, name, content, to, cc, url, summary, inReplyTo, public, followshare })
     }else if(object=="Image"){
         body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
         body += "<label>href</label><input type='text' name='href' value='"+href+"'><br>"
@@ -167,7 +183,7 @@ function makeObject(object, params, body){
         hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='href' value='"+href+"'>";
         hidden += "<input type='hidden' name='mediaType' value='"+mediaType+"'>";
-        obj = makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo })
+        obj = makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, public, followshare })
     }else if(object=="Event"){
         body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
         //body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
@@ -179,7 +195,7 @@ function makeObject(object, params, body){
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         //hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, startTime, endTime, url, summary })
+        obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, startTime, endTime, url, summary, public, followshare })
     }else if(object=="Question"){
         body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
         body += "<label>anyOf</label><input type='text' name='anyOf' value='"+anyOf+"'><br>"
@@ -191,11 +207,11 @@ function makeObject(object, params, body){
         hidden += "<input type='hidden' name='oneOf' value='"+oneOf+"'>";
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         hidden += "<input type='hidden' name='closed' value='"+closed+"'>";
-        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, anyOf, oneOf, endTime, closed })
+        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, anyOf, oneOf, endTime, closed, public, followshare })
     }else{
         body += "<label>Content</label><input type='text' name='content' value='"+content+"'><br>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
-        obj = makeArticle(username, domain, manual_guid, published, content, name, url)
+        obj = makeArticle(username, domain, manual_guid, published, content, name, url, to, cc, public, followshare)
     }
 
     return { form_append: body, hidden_append: hidden, obj }
@@ -205,7 +221,7 @@ function wrap(activity, obj, params){
     const { username, domain, ref_url, to, cc } = params;
     const actor = "https://"+domain+"/u/"+username;
     switch(activity){
-        case 'Create': wrapped = wrapInCreate(obj, actor, domain, [], ref_url); break;
+        case 'Create': wrapped = wrapInCreate(obj, actor, "guid"); break;
         case 'Delete': wrapped = wrapInDelete(obj, actor, domain, [], { to, cc }); break;
         case 'Update': wrapped = wrapInUpdate(obj, actor, domain, [], ref_url); break;
         case 'Flag': wrapped = wrapInFlag(obj, actor, domain, [], ref_url); break;
@@ -254,6 +270,8 @@ router.all("/:username/:activity/:object", (req, res) => {
 router.post("/:username/:activity/:object/sign", (req, res) => {
     const { username, activity, object } = req.params;
     const domain = req.app.get('domain');
+
+    console.log("BODY", req.body)
     
     const to = req.body.to !== undefined ? req.body.to : "";
     const cc = req.body.cc !== undefined ? req.body.cc : "";
@@ -283,7 +301,14 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
 
     const to = req.body.to !== undefined ? req.body.to : "";
     const cc = req.body.cc !== undefined ? req.body.cc : "";
+    const public = ((req.body.public !== undefined) && (req.body.public!="false"))
+        ? true : false;
+    const followshare = ((req.body.followshare !== undefined) && (req.body.followshare!="false"))
+        ? true : false;
     
+    const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain })
+    const recipient_list = to_field.concat(cc_field)
+
     const guid = crypto.randomBytes(16).toString('hex');;
     const dd = new Date();
     const published = dd.toISOString();
@@ -295,13 +320,25 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     const wrapped = wrap(activity, obj, { username, domain, ref_url, to, cc });
     body += prettyTest(wrapped)
 
-    var followers = new Array();
-    if(to!="" && to !="https://www.w3.org/ns/activitystreams#Public"){
-        followers.push(to)
+    var recipients = new Array();
+    for(let r of recipient_list){
+        if(r == uri+"/followers"){
+            recipients.concat(await knex("apfollowers").where("username", "=", uri).select("follower")
+                .then((users) => {
+                    return users.map((user) => {
+                        return user.follower;
+                    })
+                })
+                .catch((e) => {
+                    console.error("ERROR while getting followers", uri)
+                })
+            );
+        }else if(r != "" && r != "https://www.w3.org/ns/activitystreams#Public"){
+            recipients.push(r)
+        }
     }
-    if(cc!="" && cc!="https://www.w3.org/ns/activitystreams#Public"){
-        followers.push(cc)
-    }
+
+    console.log("RECIPIENTS", recipients)
     console.log("A", activity)
     if(activity == "Create" && typeof obj === 'object'){
         await addMessage(obj)
@@ -314,24 +351,21 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
         })
     }
     
-            for(let follower of followers){
-                let inbox = await findInbox(follower)
-                let myURL = new URL(follower);
-                let targetDomain = myURL.hostname;
-                await signAndSend(wrapped, uri, targetDomain, inbox)
-                .then((data) => {
-                    console.log("SEND NOTE RESPONSE",data)
-                    body += "To: "+follower+" = OK<br>";
-                })
-                .catch((err) => {
-                    console.error(err)
-                    body += "To: "+follower+" = ERROR<br>";
-                })
-            }
-        
-    
-    //body += "To: "+req.body.to+"<br>";
-    //body += "CC: "+req.body.cc+"<br>";
+    for(let recipient of recipients){
+        let inbox = await findInbox(recipient)
+        let recipient_url = new URL(recipient);
+        let targetDomain = recipient_url.hostname;
+        await signAndSend(wrapped, uri, targetDomain, inbox)
+            .then((data) => {
+                console.log("SEND NOTE RESPONSE",data)
+                body += "To: "+recipient+" = OK<br>";
+            })
+            .catch((err) => {
+                console.error(err)
+                body += "To: "+recipient+" = ERROR<br>";
+            })
+    }
+
     body += "<a href='"+tester_root+"'>BACK!</a>"
     res.send(body);
 });

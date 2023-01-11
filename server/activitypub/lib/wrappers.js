@@ -2,7 +2,7 @@ const db = require("../../../knexfile")
 const knex = require("knex")(db)
 crypto = require('crypto');
 
-function wrapInCreate(obj, actor, follower, guid = ""){
+function wrapInCreate(obj, actor, guid = ""){
   // This wrap requires to or cc...
   var guidCreate;
   if(obj.id){
@@ -28,11 +28,20 @@ function wrapInCreate(obj, actor, follower, guid = ""){
 
 function wrapInUpdate(object, actor, domain = "", follower = [], guid = ""){
   //  actor | object | target | result | origin | instrument 
-  
-    const random = crypto.randomBytes(16).toString('hex');
+  var id;
+  const random = crypto.randomBytes(16).toString('hex');
+  if(typeof object == "object" && object.id){
+    id = object.id;
+  }else if(guid!=""){
+    id = guid + "/update/"+random;
+  }else{
+    const gid = crypto.randomBytes(16).toString('hex');
+    id = actor+"/statuses/"+gid+"/update/"+random;
+  }
+    
     let updateMessage = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
-      'id': object.id+"/update/"+random,
+      'id': id,
       'type': 'Update',
       'actor': actor,
       'object': object

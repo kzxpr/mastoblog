@@ -1,0 +1,15 @@
+<div style="width: 100%;">
+{{#if (eq this.mediaType "image/png")}}
+    <img src="{{this.url}}">
+{{else if (eq this.mediaType "audio/mpeg")}}
+    <audio controls width="100%">
+        <source src="{{this.url}}" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio> 
+{{/if}}
+</div>
+{{#if (notnull this.name)}}
+    <div style="font-style: italic; width: 100%">
+        {{this.name}}
+    </div>
+{{/if}}

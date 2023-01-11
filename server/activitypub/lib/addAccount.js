@@ -108,7 +108,7 @@ async function lookupAccountByURI(account_uri){
                 .then(async(profile) => {
                     await addProfileObjToAccounts(account_uri, profile)
                         .then((account) => {
-                            console.log("Here is account", account)
+                            //console.log("Here is account", account)
                             resolve(account);
                         })
                         .catch((err) => {
@@ -173,59 +173,61 @@ async function lookupAccountByURI(account_uri){
 
 async function findProfileItem(uri, db_field, profile_field){
     return new Promise(async(resolve, reject) => {
-        await knex("apaccounts").where("uri", "=", uri)
-        .then(async(accounts) => {
-            if(accounts.length==1){
-                if(accounts[0][db_field] != "" && accounts[0][db_field]!==null){
-                    resolve(accounts[0][db_field])
-                }else{
-                    console.log("No "+db_field+" on user "+uri)
+        if(uri){
+            await knex("apaccounts").where("uri", "=", uri)
+            .then(async(accounts) => {
+                if(accounts.length==1){
+                    if(accounts[0][db_field] != "" && accounts[0][db_field]!==null){
+                        resolve(accounts[0][db_field])
+                    }else{
+                        console.log("No "+db_field+" on user "+uri)
+                        await getObjectItem(uri, { Accept: 'application/activity+json' })
+                            .then(async(profile) => {
+                                if(profile[profile_field]){
+                                    const uri_value = profile[profile_field];
+                                    await knex("apaccounts").update(db_field, uri_value).where("uri", "=", uri)
+                                    .then((data) => {
+                                        resolve(uri_value);
+                                    })
+                                    .catch((e) => {
+                                        console.error("ERROR in findProfileItem: Adding "+profile_field+" "+uri_value+" to "+uri)
+                                        reject("ERROR in findProfileItem adding "+profile_field+" to user")
+                                    })
+                                }else{
+                                    console.error("No "+profile_field+" on profile for user "+uri)
+                                    reject("No "+profile_field+" on profile for user "+uri)
+                                }
+                            })
+                            .catch((e) => {
+                                reject("Unable to fetch user "+uri)
+                            })
+                    }
+                }else if(accounts.length==0){
+                    // lookup profile by URI
+                    console.log("Zero accounts!")
                     await getObjectItem(uri, { Accept: 'application/activity+json' })
-                        .then(async(profile) => {
-                            if(profile[profile_field]){
-                                const uri_value = profile[profile_field];
-                                await knex("apaccounts").update(db_field, uri_value).where("uri", "=", uri)
-                                .then((data) => {
-                                    resolve(uri_value);
-                                })
-                                .catch((e) => {
-                                    console.error("ERROR in findProfileItem: Adding "+profile_field+" "+uri_value+" to "+uri)
-                                    reject("ERROR in findProfileItem adding "+profile_field+" to user")
-                                })
-                            }else{
-                                console.error("No "+profile_field+" on profile for user "+uri)
-                                reject("No "+profile_field+" on profile for user "+uri)
-                            }
-                        })
-                        .catch((e) => {
-                            reject("Unable to fetch user "+uri)
-                        })
+                    .then(async(profile) => {
+                        await addProfileObjToAccounts(uri, profile)
+                            .then((account) => {
+                                //console.log("Here is account", account)
+                                resolve(account[db_field]);
+                            })
+                            .catch((err) => {
+                                console.error(err)
+                                reject(err)
+                            })
+                    })
+                    .catch((err) => {
+                        console.error(err)
+                        reject(err)
+                    })
                 }
-            }else if(accounts.length==0){
-                // lookup profile by URI
-                console.log("Zero accounts!")
-                await getObjectItem(uri, { Accept: 'application/activity+json' })
-                .then(async(profile) => {
-                    await addProfileObjToAccounts(uri, profile)
-                        .then((account) => {
-                            console.log("Here is account", account)
-                            resolve(account[db_field]);
-                        })
-                        .catch((err) => {
-                            console.error(err)
-                            reject(err)
-                        })
-                })
-                .catch((err) => {
-                    console.error(err)
-                    reject(err)
-                })
-            }
-        })
-        .catch((e) => {
-            console.error("findProfileItem ERROR:",e)
-            reject("Error in findProfileItem")
-        })
+            })
+            .catch((e) => {
+                console.error("findProfileItem ERROR:",e)
+                reject("Error in findProfileItem")
+            })
+        }
     });
 }
 
