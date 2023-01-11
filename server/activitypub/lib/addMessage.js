@@ -81,7 +81,7 @@ async function addMessage(message){
                     const guid = crypto.randomBytes(16).toString('hex');
                     const parsedMessage = parseMessage(message);
                     if(parsedMessage.type=="Announce"){
-                        console.warning("WAS SENT ANNONCE - IT WAS IGNORED")
+                        console.warn("WAS SENT ANNONCE - IT WAS IGNORED")
                         reject("THIS IS AN ANNOUNCE!!!!")
                     }
                     if(parsedMessage.publishedAt===null){

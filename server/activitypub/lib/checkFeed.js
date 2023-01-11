@@ -47,7 +47,7 @@ async function checkFeed(req, res){
         })
 
         // NOW IT HAS IMPORTED ALL (NEW) MESSAGES, THEN LOOKUP NEW ADDRESSEES AND ADD THEIR ACCOUNTS
-        await knex("apaddressee").select("account_uri").groupBy("account_uri")
+        await knex("apaddressee").select("account_uri").where("type", "=", 0).groupBy("account_uri")
             .then(async(addressees) => {
                 //console.log("ALL ADDREESEES", addressees)
                 for(let addressee of addressees){
