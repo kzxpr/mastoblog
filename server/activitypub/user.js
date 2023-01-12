@@ -15,11 +15,11 @@ const { sendAcceptMessage } = require("./lib/sendAcceptMessage")
 //const { verifySignature } = require("./lib/signAndSend")
 const { sendLatestMessages } = require("./lib/sendLatestMessages")
 const { addFollower, removeFollower } = require("./lib/addFollower")
-const { lookupAccountByURI } = require("./lib/addAccount")
+const { lookupAccountByURI, removeAccount, updateAccount } = require("./lib/addAccount")
 const { addLike, removeLike } = require("./lib/addLike")
 const { addAnnounce, removeAnnounce } = require("./lib/addAnnounce")
 const { startAPLog, endAPLog } = require("./lib/aplog");
-const { addMessage } = require('./lib/addMessage');
+const { addMessage, removeMessage, updateMessage } = require('./lib/addMessage');
 const { addActivity } = require("./lib/addActivity")
 
 router.get('/:username', async function (req, res) {
@@ -266,11 +266,9 @@ router.get("/:username/inbox", async(req, res) => {
 router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     const aplog = await startAPLog(req)
     const username = req.params.username || "!shared!";
-    // pass in a name for an account, if the account doesn't exist, create it!
     let domain = req.app.get('domain');
     const myURL = new URL(req.body.actor);
     let targetDomain = myURL.hostname;
-    // TODO: add "Undo" follow event
     const reqtype = req.body.type;
 
     console.log("POST", clc.blue("/inbox"), "to "+username+" ("+reqtype+") from "+req.body.actor)
@@ -450,6 +448,87 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
                     await endAPLog(aplog, "Can't handle non-object for Undo", 500)
                     res.sendStatus(500)
                 }
+            }else if(reqtype=="Delete"){
+                const actor = req.body.actor;
+                const object = req.body.object;
+
+                // HOW TO DETERMINE TYPE OF DELETE...
+                if(actor == object){
+                    // PROBABLY WANT TO DELETE USER...
+                    // TO-DO: This should cascade!
+                    await removeAccount(actor)
+                        .then(async(msg) => {
+                            await endAPLog(aplog, msg)
+                            res.sendStatus(200)
+                        })
+                        .catch(async(e) => {
+                            await endAPLog(aplog, e, 500)
+                            res.sendStatus(500)
+                        })
+                }else if(typeof object === 'object'){
+                    const msg_id = object.id;
+                    await removeMessage(msg_id, actor)
+                        .then(async(msg) => {
+                            await endAPLog(aplog, msg)
+                            res.sendStatus(200)
+                        })
+                        .catch(async(e) => {
+                            await endAPLog(aplog, e, 500)
+                            res.sendStatus(500)
+                        })
+                }else{
+                    await endAPLog(aplog, "No idea what to do???", 500)
+                    res.sendStatus(500)
+                }
+            }else if(reqtype=="Update"){
+                // RECEIVE UPDATE
+                console.log("UPDATE TRIGGER")
+
+                // GET VALUES
+                const actor = req.body.actor;
+                const object = req.body.object;
+                const id = object.id;
+
+                if(typeof object === "object"){
+                    if(object.type=="Person"){
+                        // UPDATE
+                        if(id==actor){
+                            // ALLOWED
+                            await updateAccount(object)
+                            .then(async(msg) => {
+                                await endAPLog(aplog, msg)
+                                res.sendStatus(200)
+                            })
+                            .catch(async(e) => {
+                                await endAPLog(aplog, "ERROR from updateAccount: "+e)
+                                res.sendStatus(500)
+                            })
+                        }else{
+                            await endAPLog(aplog, "Update denied: Actor "+actor+" cannot change Account for "+id, 401)
+                            res.sendStatus(401)
+                        }
+                    }else{
+                        // ASSUMING THIS GOES TO MESSAGES...
+                        if(object.attributedTo == actor){
+                            // ALLOWED
+                            await updateMessage(object)
+                                .then(async(msg) => {
+                                    await endAPLog(aplog, msg)
+                                    res.sendStatus(200)
+                                })
+                                .catch(async(e) => {
+                                    await endAPLog(aplog, "ERROR from updateMessage: "+e)
+                                    res.sendStatus(500)
+                                })
+                        }else{
+                            await endAPLog(aplog, "Update denied: Actor "+actor+" cannot change Message for "+id, 401)
+                            res.sendStatus(401)
+                        }
+                    }
+                }else{
+                    await endAPLog(aplog, "Don't know how to handle non-object Update", 500)
+                    res.sendStatus(500)
+                }
             }else{
                 await endAPLog(aplog, "REQ type is not recognized...", 400)
                 res.sendStatus(400)
@@ -457,14 +536,14 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
         }else{
             // IGNORE!!!!!
             console.log("Activity already in DB")
+            await endAPLog(aplog, "Activity already in DB")
+            res.sendStatus(200)
         }
     })
     .catch((e) => {
         console.warn("ERROR in addActivity", e)
         res.sendStatus(500)
     })
-
-    
 });
 
 router.get("*", async(req, res) => {

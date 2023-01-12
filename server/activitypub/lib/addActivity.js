@@ -16,7 +16,7 @@ function parseActivity(activity){
 async function addActivity(activity){
     return new Promise(async(resolve, reject) => {
         const parsedActivity = parseActivity(activity);
-        console.log("TRIGGER addActivity", parsedActivity)
+        //console.log("TRIGGER addActivity", parsedActivity)
 
         await knex("apactivities").where("uri", "=", parsedActivity.uri)
         .then(async(rows) => {

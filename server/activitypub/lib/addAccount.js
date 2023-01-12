@@ -240,4 +240,60 @@ function encodeStr(rawStr){
     return encodedStr;
 }
 
-module.exports = { encodeStr, addProfileObjToAccounts, lookupProfileObjByWebfinger, parseProfile, lookupAccountByURI, findInbox, findOutbox, findFollowers }
+async function removeAccount(account_uri){
+    console.log("TRIGGER removeAccount")
+    return new Promise(async(resolve, reject) => {
+        await knex("apaccounts")
+            .where("uri", "=", account_uri)
+            .delete()
+            .then((rows) => {
+                console.log("removeAccount return", rows)
+                if(rows>0){
+                    resolve("removeAccount: Actor "+account_uri+" was removed")
+                }else{
+                    resolve("removeAccount: Actor "+account_uri+" not found")
+                }
+            })
+            .catch((e) => {
+                reject(e)
+            })
+    })
+}
+
+async function updateAccount(account){
+    return new Promise(async(resolve, reject) => {
+        const account_uri = account.id;
+        await knex("apaccounts")
+            .where("uri", "=", account_uri)
+            .select("id")
+            .first()
+            .then(async(account_id) => {
+                if(account_id){
+                    const parsedProfile = parseProfile(account)
+                    await knex("apaccounts")
+                    .update({
+                        ... parsedProfile,
+                        updatedAt: knex.fn.now()
+                    })
+                    .where("id", "=", account_id.id)
+                    .then(async(msg) => {
+                        resolve("UPDATED account "+account_uri+": "+msg)
+                    })
+                    .catch((e) => {
+                        reject("ERROR in updateAccount"+e)
+                    })
+                }else{
+                    await lookupAccountByURI(account_uri)
+                        .then((msg) => {
+                            console.log("Update object not found. Adding account "+account_id)
+                            resolve("Update object not found. Adding account "+account_id)
+                        })
+                        .catch((e) => {
+                            reject("Update object not found. ERROR adding account to DB")
+                        })
+                }
+            })
+    })
+}
+
+module.exports = { encodeStr, addProfileObjToAccounts, lookupProfileObjByWebfinger, parseProfile, lookupAccountByURI, findInbox, findOutbox, findFollowers, removeAccount, updateAccount }

@@ -205,4 +205,58 @@ async function addMessage(message){
     })
 }
 
-module.exports = { addMessage, parseMessage, unwrapMessage }
+async function removeMessage(message_uri, creator_uri){
+    console.log("TRIGGER removeMessage", message_uri, creator_uri)
+    return new Promise(async(resolve, reject) => {
+        await knex("apmessages")
+        .where("attributedTo", "=", creator_uri)
+        .andWhere("uri", "=", message_uri)
+        .first()
+        .delete()
+        .then((rows) => {
+            resolve("removeMessage: "+rows+" row removed for "+message_uri)
+        })
+        .catch((e) => {
+            reject(e);
+        })
+    });
+}
+
+async function updateMessage(message){
+    return new Promise(async(resolve, reject) => {
+        const message_uri = message.id;
+        await knex("apmessages")
+            .where("uri", "=", message_uri)
+            .select("id")
+            .first()
+            .then(async(message_id) => {
+                if(message_id){
+                    const parsedMessage = parseMessage(message)
+                    await knex("apmessages")
+                    .update({
+                        ... parsedMessage,
+                        updated: knex.fn.now()
+                    })
+                    .where("id", "=", message_id.id)
+                    .andWhere("attributedTo", "=", parsedMessage.attributedTo)
+                    .then(async(msg) => {
+                        resolve("UPDATED message "+message_uri+": "+msg)
+                    })
+                    .catch((e) => {
+                        reject("ERROR in updateMessage"+e)
+                    })
+                }else{
+                    await addMessage(message)
+                        .then((msg) => {
+                            console.log("Update object not found. Adding message "+message_uri)
+                            resolve("Update object not found. Adding message "+message_uri)
+                        })
+                        .catch((e) => {
+                            reject("Update object not found. ERROR adding message to DB")
+                        })
+                }
+            })
+    })
+}
+
+module.exports = { addMessage, parseMessage, unwrapMessage, removeMessage, updateMessage }
