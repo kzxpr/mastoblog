@@ -16,4 +16,20 @@ async function addFollower(username, follower){
         })
 }
 
-module.exports = { addFollower }
+async function removeFollower(username, follower){
+    return new Promise(async(resolve, reject) => {
+        await knex("apfollowers")
+            .where("username", "=", username)
+            .andWhere("follower", "=", follower)
+            .delete()
+            .then((d) => {
+                resolve()
+            })
+            .catch((e) => {
+                console.error("Uncaught error inside removeFollower", e)
+                reject()
+            })
+    });
+}
+
+module.exports = { addFollower, removeFollower }

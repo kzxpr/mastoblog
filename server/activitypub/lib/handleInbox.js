@@ -1,3 +1,25 @@
+const parser = require("./parser")
+
+function verifySignature(signature, publicKeyJson) {
+    let signatureValid;
+  
+    try {
+      // Verify the signature
+      signatureValid = signature.verify(
+        publicKeyJson.publicKeyPem,	// The PEM string from the public key object
+      );
+    } catch (error) {
+      console.log("Signature Verification error", error)
+    }
+  
+    return signatureValid;
+  }
+
+function parseSignature(req){
+    const { url, method, headers } = request;
+    return parser.parse({ url, method, headers });
+}
+
 async function handleInbox(domain, req){
     const aplog = await startAPLog(req)
     // pass in a name for an account, if the account doesn't exist, create it!
@@ -25,7 +47,11 @@ async function handleInbox(domain, req){
         const objtype = req.body.object.type;
         if(objtype==="Note"){
             console.log("I created a note saying",req.body.object.content)
-            addMessage(req.body.object)
+            addMessage(req.body.object);
+            const signature = parseSignature(req);
+            console.log("T", signature, sender)
+            const signatureValid = verifySignature(signature, sender.pubkey);
+            console.log("CREATE VERIFY", signatureValid)
             /*if(sender){
                 const objwithoutsignature = Object.keys(req.body)
                     .filter(key => key !== 'signature')

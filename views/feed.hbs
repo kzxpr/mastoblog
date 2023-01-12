@@ -42,6 +42,26 @@
             </div>
         {{/if}}
 
+        <div style="font-size: 10pt; margin: 10px;">
+            <div style="display: flex; flex-direction: row;">
+                <div style="width: 90px;">LIKES:</div>
+                <div>
+                {{#each this.likes}}
+                    <div>{{this.sender.handle}}</div>
+                {{/each}}
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: row;">
+                <div style="width: 90px;">ANNOUNCES:</div>
+                <div>
+                    {{#each this.announces}}
+                        <div>{{this.sender.handle}}</div>
+                    {{/each}}
+                </div>
+            </div>
+        </div>
+
         {{#if this.tags}}
             <div style="border-top: 1px solid #ccc; display: flex; flex-wrap: wrap;">
                 {{#each this.tags}}

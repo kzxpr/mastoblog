@@ -171,7 +171,7 @@ app.get("/feed", async (req, res) => {
     const messages = await Message.query()
         .whereNull("inReplyTo")
         .orderBy("publishedAt", "desc")
-        .withGraphFetched("[creator.^1, addressees.^1, attachments.^1, tags.^1, replies.[creator,attachments]]")
+        .withGraphFetched("[creator.^1, addressees.^1, attachments.^1, tags.^1, replies.[creator,attachments], likes.sender.^1, announces.sender.^1]")
     //for(let m of messages){
         //console.log("FOUND ",m.addressees)
     //}

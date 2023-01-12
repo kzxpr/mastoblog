@@ -132,45 +132,6 @@ async function lookupAccountByURI(account_uri){
     })
 }
 
-/*async function findInbox(uri){
-    return new Promise(async(resolve, reject) => {
-        await knex("apaccounts").where("uri", "=", uri)
-        .then(async(accounts) => {
-            if(accounts.length==1){
-                if(accounts[0].inbox_uri != "" && accounts[0].inbox_uri!==null){
-                    resolve(accounts[0].inbox_uri)
-                }else{
-                    console.error("ERROR in findInbox", "No inbox_uri on user "+uri)
-                    reject("No inbox_uri on user "+uri)
-                }
-            }else if(accounts.length==0){
-                // lookup profile by URI
-                console.log("Zero accounts!")
-                await getObjectItem(uri, { Accept: 'application/activity+json' })
-                .then(async(profile) => {
-                    await addProfileObjToAccounts(uri, profile)
-                        .then((account) => {
-                            console.log("Here is account", account)
-                            resolve(account.inbox_uri);
-                        })
-                        .catch((err) => {
-                            console.error(err)
-                            reject(err)
-                        })
-                })
-                .catch((err) => {
-                    console.error(err)
-                    reject(err)
-                })
-            }
-        })
-        .catch((e) => {
-            console.error("findInbox ERROR:",e)
-            reject("Error in findInbox")
-        })
-    });
-}*/
-
 async function findProfileItem(uri, db_field, profile_field){
     return new Promise(async(resolve, reject) => {
         if(uri){

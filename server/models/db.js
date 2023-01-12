@@ -17,6 +17,44 @@ class Tag extends Model {
 	}
 }
 
+class Like extends Model {
+	static get tableName() {
+		return 'aplikes';
+	}
+
+	static get relationMappings() {
+		return {
+			sender: {
+				relation: Model.HasOneRelation,
+				modelClass: Account,
+				join: {
+					from: 'aplikes.account_uri',
+					to: 'apaccounts.uri'
+				}
+			},
+		}
+	}
+}
+
+class Announce extends Model {
+	static get tableName() {
+		return 'apannounces';
+	}
+
+	static get relationMappings() {
+		return {
+			sender: {
+				relation: Model.HasOneRelation,
+				modelClass: Account,
+				join: {
+					from: 'apannounces.account_uri',
+					to: 'apaccounts.uri'
+				}
+			},
+		}
+	}
+}
+
 class Account extends Model {
 	static get tableName() {
 		return 'apaccounts';
@@ -103,6 +141,22 @@ class Message extends Model {
 					from: 'apmessages.uri',
 					to: 'apmessages.inReplyTo'
 				}
+			},
+			likes: {
+				relation: Model.HasManyRelation,
+				modelClass: Like,
+				join: {
+					from: 'apmessages.uri',
+					to: 'aplikes.message_uri'
+				}
+			},
+			announces: {
+				relation: Model.HasManyRelation,
+				modelClass: Announce,
+				join: {
+					from: 'apmessages.uri',
+					to: 'apannounces.message_uri'
+				}
 			}
 		}
 	}
@@ -154,4 +208,4 @@ class Message extends Model {
 	}
 }*/
 
-module.exports = { Tag, Account, Message, Attachment }
+module.exports = { Tag, Account, Message, Attachment, Like, Announce }
