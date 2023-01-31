@@ -24,6 +24,9 @@ var bodyParser = require('body-parser')
 app.use(bodyParser.json({type: 'application/activity+json'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
+/* BLUR */
+const { decodeImageFromBlurhash } = require("./server/activitypub/lib/blurhash")
+
 /* ALIVE TEST */
 app.get("/alive", (req, res) => {
     console.log("TRIGGER")
@@ -248,6 +251,12 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
             nextpage
         })
 });
+
+app.get("/sandbox", (req, res) => {
+    res.send("<img src='"+decodeImageFromBlurhash("UFCFL;}@I:sSrqr=oL$*Irt7xYRj$fxDofNH", 387, 258)+"'>");
+    //a.width = ;
+    //a.height = ;
+})
 
 app.listen(port, () => {
     console.log("Listen on the port "+port);

@@ -263,6 +263,15 @@ router.get("/:username/inbox", async(req, res) => {
     res.sendStatus(404)
 })
 
+function makeDigest(object){
+    const input = JSON.stringify(object);
+
+    var crypto = require('crypto');
+    const hash = crypto.createHash('sha256').update(input).digest('base64');
+
+    return "SHA-256="+hash;
+}
+
 router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     const aplog = await startAPLog(req)
     const username = req.params.username || "!shared!";
@@ -272,6 +281,15 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     const reqtype = req.body.type;
 
     console.log("POST", clc.blue("/inbox"), "to "+username+" ("+reqtype+") from "+req.body.actor)
+
+    const digest = makeDigest(req.body);
+    console.log(digest);
+    console.log(req.headers.digest)
+    if(digest==req.headers.digest){
+        console.log("MATCH")
+    }else{
+        console.log("FALSE")
+    }
 
     await addActivity(req.body)
     .then(async(proceed) => {
@@ -520,6 +538,7 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
                                     await endAPLog(aplog, "ERROR from updateMessage: "+e)
                                     res.sendStatus(500)
                                 })
+                            // TO-DO: This should also influence 'to', 'cc', 'hashtags' and other related tables
                         }else{
                             await endAPLog(aplog, "Update denied: Actor "+actor+" cannot change Message for "+id, 401)
                             res.sendStatus(401)

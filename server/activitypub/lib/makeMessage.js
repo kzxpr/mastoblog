@@ -1,3 +1,5 @@
+const { encodeImageToBlurhash } = require("./blurhash")
+
 function makeMessage(uri, guid, params){
     const { published, content, url, cc, to, public, followshare } = params;
     var url_link;
@@ -48,8 +50,8 @@ function handleAddress(params){
     return { cc_field, to_field }
 }
 
-function makeNote(username, domain, guid, params){
-    const { published, name, content, to, cc, url, summary, inReplyTo, public, followshare } = params;
+async function makeNote(username, domain, guid, params){
+    const { published, name, content, to, cc, url, href, mediaType, summary, inReplyTo, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -72,6 +74,20 @@ function makeNote(username, domain, guid, params){
     obj["summary"] = summary;
     obj["content"] = content;
     obj["contentMap"] = { "en": summary };
+    if(href && href != null){
+        attachments = new Array();
+        var a = {};
+        a.type = "Note";
+        a.mediaType = mediaType;
+        a.url = href;
+        a.name = "Untitled"
+        a.blurhash = await encodeImageToBlurhash(a.url)
+        //a.blurhash = "UdM7ifM{0KIox^RPt7WVx]ozs.Rj%goenhs:";
+        a.width = 387;
+        a.height = 258;
+        attachments.push(a)
+        obj["attachment"] = attachments;
+    }
     return obj;
 }
 

@@ -109,7 +109,7 @@ router.get("/:username/:activity", (req, res) => {
     res.send(body)
 })
 
-function makeObject(object, params, body){
+async function makeObject(object, params, body){
     const { domain, username, guid, published } = params;
     const stringobj = body.stringobj !== undefined ? body.stringobj : "https://"+domain+"/u/"+username+"/";
     const content = body.content !== undefined ? body.content : "This is the content of the message <i>including</i> HTML"
@@ -172,10 +172,22 @@ function makeObject(object, params, body){
         //body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
         body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
         body += "<label>summary</label><input type='text' name='summary' value='"+summary+"'><br>"
+        //body += "<label>mediaType</label><input type='text' name='mediaType' value='"+mediaType+"'><br>"
+        body += "<label>mediaType</label>";
+        //body += "<input type='text' name='mediaType' value='"+mediaType+"'>";
+        body += "<select name='mediaType'>"
+        body += "<option value='image/png'>image/png</option>"
+        body += "<option value='image/jpeg'>image/jpeg</option>"
+        body += "<option value='audio/mpeg'>audio/mpeg</option>"
+        body += "</select>"
+        body += "<br>"
+        body += "<label>href</label><input type='text' name='href' value='"+href+"'><br>"
         //hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = makeNote(username, domain, manual_guid, { published, name, content, to, cc, url, summary, inReplyTo, public, followshare })
+        hidden += "<input type='hidden' name='mediaType' value='"+mediaType+"'>";
+        hidden += "<input type='hidden' name='href' value='"+href+"'>";
+        obj = await makeNote(username, domain, manual_guid, { published, name, href, mediaType, content, to, cc, url, summary, inReplyTo, public, followshare })
     }else if(object=="Image"){
         body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
         body += "<label>href</label><input type='text' name='href' value='"+href+"'><br>"
@@ -233,7 +245,7 @@ function wrap(activity, obj, params){
     return wrapped
 }
 
-router.all("/:username/:activity/:object", (req, res) => {
+router.all("/:username/:activity/:object", async (req, res) => {
     const { username, activity, object } = req.params;
     const domain = req.app.get('domain');
     
@@ -252,7 +264,7 @@ router.all("/:username/:activity/:object", (req, res) => {
     hidden = "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"/sign' method='post'>";
     body += "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"' method='post'>"
     
-    const { form_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
+    const { form_append, hidden_append, obj } = await makeObject(object, { username, domain, published, guid }, req.body)
     //console.log("BO", obj)
     body += form_append;
     hidden += hidden_append;
@@ -267,7 +279,7 @@ router.all("/:username/:activity/:object", (req, res) => {
     res.send(body)
 })
 
-router.post("/:username/:activity/:object/sign", (req, res) => {
+router.post("/:username/:activity/:object/sign", async (req, res) => {
     const { username, activity, object } = req.params;
     const domain = req.app.get('domain');
 
@@ -280,7 +292,7 @@ router.post("/:username/:activity/:object/sign", (req, res) => {
     const dd = new Date();
     const published = dd.toISOString();
     var body = header();
-    const { body_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
+    const { body_append, hidden_append, obj } = await makeObject(object, { username, domain, published, guid }, req.body)
 
     body += "Review one last time...<br>"
     body += "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"/sign/send' method='post'>"
@@ -313,7 +325,7 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     const dd = new Date();
     const published = dd.toISOString();
     var body = header();
-    const { body_append, hidden_append, obj } = makeObject(object, { username, domain, published, guid }, req.body)
+    const { body_append, hidden_append, obj } = await makeObject(object, { username, domain, published, guid }, req.body)
 
     const uri = "https://"+domain+"/u/"+username;
     const ref_url = uri+"/statuses/"+guid;
