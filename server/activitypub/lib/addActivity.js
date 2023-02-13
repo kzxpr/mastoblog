@@ -16,31 +16,34 @@ function parseActivity(activity){
 async function addActivity(activity){
     return new Promise(async(resolve, reject) => {
         const parsedActivity = parseActivity(activity);
-        //console.log("TRIGGER addActivity", parsedActivity)
+        console.log("TRIGGER addActivity", parsedActivity)
 
-        await knex("apactivities").where("uri", "=", parsedActivity.uri)
-        .then(async(rows) => {
-            if(rows.length==0){
-                // ADD ACTIVITY
-                await knex("apactivities").insert({
-                    ... parsedActivity,
-                    createdAt: knex.fn.now()
-                })
-                .then((data) => {
-                    resolve(true)
-                })
-                .catch((e) => {
-                    reject(e)
-                })
-            }else{
-                // IGNORE ACTIVITY
-                resolve(false)
-            }
-        })
-        .catch((e) => {
-            console.error("MySQL error on addActivity", e)
-            reject(e)
-        })
+        // NOT ALL ACTIVITIES HAVE A 'uri' APPARENTLY (seen on a 'remove' request)
+        if(parsedActivity.uri){
+            await knex("apactivities").where("uri", "=", parsedActivity.uri)
+            .then(async(rows) => {
+                if(rows.length==0){
+                    // ADD ACTIVITY
+                    await knex("apactivities").insert({
+                        ... parsedActivity,
+                        createdAt: knex.fn.now()
+                    })
+                    .then((data) => {
+                        resolve(true)
+                    })
+                    .catch((e) => {
+                        reject(e)
+                    })
+                }else{
+                    // IGNORE ACTIVITY
+                    resolve(false)
+                }
+            })
+            .catch((e) => {
+                console.error("MySQL error on addActivity", e)
+                reject(e)
+            })
+        }
     })
 }
 

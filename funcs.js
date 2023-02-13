@@ -48,8 +48,16 @@ function count(arr){
     }
 }
 
+function parseJSON(str){
+    return JSON.parse(str);
+}
+
 function prettyJSON(src){
     return JSON.stringify(JSON.parse(src), undefined, 4)
 }
 
-module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero, prettyJSON, notnull, notempty }
+function setVar(varName, varValue, options) {
+    options.data.root[varName] = varValue;
+}
+
+module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero, prettyJSON, notnull, notempty, parseJSON, setVar }

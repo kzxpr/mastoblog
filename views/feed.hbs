@@ -34,6 +34,45 @@
             {{{this.content}}}
         </div>
 
+        {{#if (eq this.type "Question")}}
+            <div style="border-bottom: 1px solid #ccc;">
+                {{#if this.oneOf}}
+                    <table border="1" width="100%">
+                    {{#each (parseJSON this.oneOf)}}
+                        <tr>
+                            <td width="25%">{{this.name}}</td>
+                            {{setVar "optionname" this.name}}
+                            <td>
+                                {{setVar "optioncount" 0}}
+                                {{#if ../this.replies}}
+                                    {{#each ../this.replies}}
+                                        {{#if (eq this.name ../../../optionname)}}
+                                            <div>
+                                                <img src="{{this.creator.icon}}" height="50"><br>
+                                                {{this.creator.username}}
+                                            </div>
+                                            {{setVar "optioncount" (sum ../../../optioncount 1)}}
+                                        {{/if}}
+                                    {{/each}}
+                                {{/if}}
+                            </td>
+                            <td width="10%">
+                                {{../../optioncount}}
+                            </td>
+                        </tr>
+                    {{/each}}
+                    </table>
+                {{/if}}
+                {{#if this.anyOf}}
+                    <ul>
+                    {{#each (parseJSON this.anyOf)}}
+                        <li>{{this.name}}</li>
+                    {{/each}}
+                    </ul>
+                {{/if}}
+            </div>
+        {{/if}}
+
         {{#if this.attachments}}
             <div style="width: 100%; text-align: center;">
                 {{#each this.attachments}}

@@ -39,7 +39,13 @@ function parseMessage(message){
     const replies_uri = ((message.replies) && (message.replies.id))
         ? message.replies.id
         : null;
-    return { uri, type, summary, inReplyTo, publishedAt, url, attributedTo, content, name, replies_uri }
+    const anyOf = ((message.anyOf))
+        ? JSON.stringify(message.anyOf)
+        : null;
+    const oneOf = ((message.oneOf))
+        ? JSON.stringify(message.oneOf)
+        : null;
+    return { uri, type, summary, inReplyTo, publishedAt, url, attributedTo, content, name, replies_uri, anyOf, oneOf }
 }
 
 function parseAddressees(arr, field){

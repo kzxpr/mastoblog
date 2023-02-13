@@ -352,6 +352,8 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
 
     console.log("RECIPIENTS", recipients)
     console.log("A", activity)
+
+    /* ADD ACTIVITY TO DATABASE */
     if(activity == "Create" && typeof obj === 'object'){
         await addMessage(obj)
         .then(async(ok) => {
