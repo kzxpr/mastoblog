@@ -323,9 +323,14 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
                     addMessage(req.body.object)
                     await endAPLog(aplog, "Received article", 201)
                     res.sendStatus(201)
+                }else if(objtype=="Question"){
+                    console.log("I got a question saying", req.body.object.content)
+                    addMessage(req.body.object)
+                    await endAPLog(aplog, "Received question", 201)
+                    res.sendStatus(201)
                 }else{
                     await endAPLog(aplog, "Received create, but object type wasn't recognized", 500)
-                    console.warn("RECEIVED", objtype)
+                    console.warn("UNHANDLED RECEIVED", objtype)
                     res.sendStatus(500)
                 }
             }else if(reqtype == 'Follow'){

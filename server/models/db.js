@@ -55,6 +55,12 @@ class Announce extends Model {
 	}
 }
 
+class Option extends Model {
+	static get tableName() {
+		return 'apoptions';
+	}
+}
+
 class Account extends Model {
 	static get tableName() {
 		return 'apaccounts';
@@ -157,6 +163,14 @@ class Message extends Model {
 					from: 'apmessages.uri',
 					to: 'apannounces.message_uri'
 				}
+			},
+			options: {
+				relation: Model.HasManyRelation,
+				modelClass: Option,
+				join: {
+					from: 'apmessages.uri',
+					to: 'apoptions.message_uri'
+				}
 			}
 		}
 	}
@@ -208,4 +222,4 @@ class Message extends Model {
 	}
 }*/
 
-module.exports = { Tag, Account, Message, Attachment, Like, Announce }
+module.exports = { Tag, Account, Message, Attachment, Like, Announce, Option }
