@@ -20,8 +20,17 @@ async function getImageData(src){
 }
 
 async function encodeImageToBlurhash(imageUrl){
-    const imageData = await getImageData(imageUrl);
-    return encode(imageData.data, imageData.width, imageData.height, 4, 4);
+    return new Promise(async(resolve, reject) => {
+        if(imageUrl && imageUrl != "https://dev2.hackademiet.dk/public/"){
+            await getImageData(imageUrl)
+            .then((imageData) => {
+                resolve(encode(imageData.data, imageData.width, imageData.height, 4, 4))
+            })
+            .catch((e) => {
+                reject(e)
+            })
+        }
+    })
 };
 
 function decodeImageFromBlurhash(blur, width, height){

@@ -51,7 +51,7 @@ function handleAddress(params){
 }
 
 async function makeNote(username, domain, guid, params){
-    const { published, name, content, to, cc, url, href, mediaType, summary, inReplyTo, public, followshare } = params;
+    const { published, name, content, to, cc, url, n_attachs, href, mediaType, summary, inReplyTo, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -75,17 +75,33 @@ async function makeNote(username, domain, guid, params){
     obj["content"] = content;
     obj["contentMap"] = { "en": summary };
     if(href && href != null){
+        var urls = href;
+        var types = mediaType;
+        if(!Array.isArray(href)){
+            urls = new Array(href)
+            types = new Array(mediaType)
+        }
         attachments = new Array();
-        var a = {};
-        a.type = "Note";
-        a.mediaType = mediaType;
-        a.url = href;
-        a.name = "Untitled"
-        a.blurhash = await encodeImageToBlurhash(a.url)
-        //a.blurhash = "UdM7ifM{0KIox^RPt7WVx]ozs.Rj%goenhs:";
-        a.width = 387;
-        a.height = 258;
-        attachments.push(a)
+        for(let i = 0; i < n_attachs; i++){
+            if(urls[i] !== undefined){
+                var a = {};
+                a.type = "Note";
+                a.mediaType = types[i];
+                a.url = urls[i];
+                a.name = "Untitled"
+                a.blurhash = await encodeImageToBlurhash(a.url)
+                .then((blurhash) => {
+                    return blurhash
+                })
+                .catch((e) => {
+                    console.error("ERROR encoding blurhash", e)
+                })
+                a.width = 387;
+                a.height = 258;
+                attachments.push(a)
+            }
+            
+        }
         obj["attachment"] = attachments;
     }
     return obj;

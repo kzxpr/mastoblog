@@ -123,14 +123,25 @@ async function makeObject(object, params, body){
     const anyOf = body.anyOf !== undefined ? body.anyOf : "";
     const oneOf = body.oneOf !== undefined ? body.oneOf : '[{"type": "Note","name": "Yes"},{"type": "Note","name": "No"}]';
     const closed = body.closed !== undefined ? body.closed : "";
-    const href = body.href !== undefined ? body.href : "https://"+domain+"/public/";
-    const mediaType = body.mediaType !== undefined ? body.mediaType : "image/png";
+    var href = new Array();
+    var mediaType = new Array();
+    if(body.href !== undefined){
+        if(Array.isArray(body.href)){
+            href = body.href;
+            mediaType = body.mediaType;
+        }else{
+            href = new Array(body.href)
+            mediaType = new Array(body.mediaType)
+        }
+    }
+    
     const manual_guid = body.manual_guid != "" ? body.manual_guid : guid;
     const url = body.url !== undefined ? body.url : "https://"+domain+"/u/"+username+"/message/"+manual_guid;
     const public = ((body.public !== undefined) && (body.public != "false"))
         ? true : false;
     const followshare = ((body.followshare !== undefined) && (body.followshare != "false"))
         ? true : false;
+    const n_attachs = body.n_attachs !== undefined ? body.n_attachs : 0;
     var body = "";
     var hidden = "";
     var obj;
@@ -163,45 +174,62 @@ async function makeObject(object, params, body){
     hidden += "<input type='hidden' name='manual_guid' value='"+manual_guid+"'>";
     
     body += "<tr><td colspan='3'><u>Special parameters</u></tr>"
-    body += "</table>"
+    
     if(object=="Id"){
-        body += "<label>string:</label> <input type='text' name='stringobj' value='"+stringobj+"' style='width: 100%; max-width: 300px;'> (url)<br>";
+        body += "<tr><td>string:</td><td><input type='text' name='stringobj' value='"+stringobj+"' style='width: 100%; max-width: 300px;'> (url)</td></tr>";
         hidden += "<input type='hidden' name='stringobj' value='"+stringobj+"'>";
         obj = stringobj;
     }else if(object=="Note"){
         //body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
-        body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
-        body += "<label>summary</label><input type='text' name='summary' value='"+summary+"'><br>"
-        //body += "<label>mediaType</label><input type='text' name='mediaType' value='"+mediaType+"'><br>"
-        body += "<label>mediaType</label>";
-        //body += "<input type='text' name='mediaType' value='"+mediaType+"'>";
-        body += "<select name='mediaType'>"
-        body += "<option value='image/png'>image/png</option>"
-        body += "<option value='image/jpeg'>image/jpeg</option>"
-        body += "<option value='audio/mpeg'>audio/mpeg</option>"
-        body += "</select>"
-        body += "<br>"
-        body += "<label>href</label><input type='text' name='href' value='"+href+"'><br>"
+        body += "<tr><td>content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
+        body += "<tr><td>summary</td><td><input type='text' name='summary' value='"+summary+"'></td></tr>"
+
+        body += "<tr><td colspan='3'><u>Attachments:</u><td></tr>";
+        body += "<tr><td>number of attachments</td><td><input type='number' name='n_attachs' value='"+n_attachs+"'></td></tr>"
+        const attachment_types = new Array("image/png", "image/jpeg", "audio/mpeg")
+        if(n_attachs>0){
+            for(let n = 0; n < n_attachs; n++){
+                body += "<tr>"
+                body += "<td>attachment"+n+"</td>";
+                body += "<td><input type='text' name='href' value='"+(href[n] ? href[n] : "")+"'></td>";
+                body += "<td><select name='mediaType' value='"+mediaType[n]+"'>"
+                for(let attachment_type of attachment_types){
+                    body += "<option value='"+attachment_type+"' ";
+                    if(attachment_type == mediaType[n]){
+                        body += "selected"
+                    }
+                    body += ">"+attachment_type+"</option>"
+                }
+                body += "</select></td>"
+                body += "</tr>"
+            }
+        }
+        
         //hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        hidden += "<input type='hidden' name='mediaType' value='"+mediaType+"'>";
-        hidden += "<input type='hidden' name='href' value='"+href+"'>";
-        obj = await makeNote(username, domain, manual_guid, { published, name, href, mediaType, content, to, cc, url, summary, inReplyTo, public, followshare })
+        hidden += "<input type='hidden' name='n_attachs' value='"+n_attachs+"'>";
+        if(n_attachs>0){
+            for(let n = 0; n < n_attachs; n++){
+                hidden += "<input type='hidden' name='mediaType' value='"+mediaType[n]+"'>";
+                hidden += "<input type='hidden' name='href' value='"+href[n]+"'>";
+            }
+        }
+        obj = await makeNote(username, domain, manual_guid, { published, name, n_attachs, href, mediaType, content, to, cc, url, summary, inReplyTo, public, followshare })
     }else if(object=="Image"){
-        body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
-        body += "<label>href</label><input type='text' name='href' value='"+href+"'><br>"
-        body += "<label>mediaType</label><input type='text' name='mediaType' value='"+mediaType+"'><br>"
+        body += "<tr><td>name</td><td><input type='text' name='name' value='"+name+"'></td></tr>"
+        body += "<tr><td>href</td><td><input type='text' name='href' value='"+href+"'></td></tr>"
+        body += "<tr><td>mediaType</td><td><input type='text' name='mediaType' value='"+mediaType+"'></td></tr>"
         hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='href' value='"+href+"'>";
         hidden += "<input type='hidden' name='mediaType' value='"+mediaType+"'>";
         obj = makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, public, followshare })
     }else if(object=="Event"){
-        body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
+        body += "<tr><td>name</td><td><input type='text' name='name' value='"+name+"'></td></tr>"
         //body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
-        body += "<label>summary</label><input type='text' name='summary' value='"+summary+"'><br>"
-        body += "<label>startTime</label><input type='text' name='startTime' value='"+startTime+"'><br>"
-        body += "<label>endTime</label><input type='text' name='endTime' value='"+endTime+"'><br>"
+        body += "<tr><td>summary</td><td><input type='text' name='summary' value='"+summary+"'></td></tr>"
+        body += "<tr><td>startTime</td><td><input type='text' name='startTime' value='"+startTime+"'></td></tr>"
+        body += "<tr><td>endTime</td><td><input type='text' name='endTime' value='"+endTime+"'></td></tr>"
         hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='startTime' value='"+startTime+"'>";
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
@@ -209,11 +237,11 @@ async function makeObject(object, params, body){
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
         obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, startTime, endTime, url, summary, public, followshare })
     }else if(object=="Question"){
-        body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
-        body += "<label>anyOf</label><input type='text' name='anyOf' value='"+anyOf+"'><br>"
-        body += "<label>oneOf</label><input type='text' name='oneOf' value='"+oneOf+"'><br>"
-        body += "<label>closed</label><input type='text' name='closed' value='"+closed+"'><br>"
-        body += "<label>endTime</label><input type='text' name='endTime' value='"+endTime+"'><br>"
+        body += "<tr><td>content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
+        body += "<tr><td>anyOf</td><td><input type='text' name='anyOf' value='"+anyOf+"'></td></tr>"
+        body += "<trl><td>oneOf</td><td><input type='text' name='oneOf' value='"+oneOf+"'></td></tr>"
+        body += "<tr><td>closed</td><td><input type='text' name='closed' value='"+closed+"'></td></tr>"
+        body += "<tr><td>endTime</td><td><input type='text' name='endTime' value='"+endTime+"'></td></tr>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='anyOf' value='"+anyOf+"'>";
         hidden += "<input type='hidden' name='oneOf' value='"+oneOf+"'>";
@@ -221,11 +249,11 @@ async function makeObject(object, params, body){
         hidden += "<input type='hidden' name='closed' value='"+closed+"'>";
         obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, anyOf, oneOf, endTime, closed, public, followshare })
     }else{
-        body += "<label>Content</label><input type='text' name='content' value='"+content+"'><br>"
+        body += "<tr><td>Content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
         obj = makeArticle(username, domain, manual_guid, published, content, name, url, to, cc, public, followshare)
     }
-
+    body += "</table>"
     return { form_append: body, hidden_append: hidden, obj }
 }
 

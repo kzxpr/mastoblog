@@ -24,3 +24,7 @@ Database is set up to run utf8. To change a table, do:
 ### Run through SSH tunnel:
 
     ssh -R remoteport:127.0.0.1:localport user@ip.ip.ip.ip
+
+Example:
+
+    ssh -R 5011:127.0.0.1:3001 root@ip.ip.ip.ip
