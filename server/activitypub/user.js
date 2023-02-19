@@ -12,7 +12,6 @@ const { loadFollowersByUri, loadFollowingByUri } = require("./lib/loadFollowersB
 const { makeMessage } = require("./lib/makeMessage");
 const { wrapInCreate } = require('./lib/wrappers');
 const { sendAcceptMessage } = require("./lib/sendAcceptMessage")
-//const { verifySignature } = require("./lib/signAndSend")
 const { sendLatestMessages } = require("./lib/sendLatestMessages")
 const { addFollower, removeFollower } = require("./lib/addFollower")
 const { lookupAccountByURI, removeAccount, updateAccount } = require("./lib/addAccount")
@@ -21,6 +20,31 @@ const { addAnnounce, removeAnnounce } = require("./lib/addAnnounce")
 const { startAPLog, endAPLog } = require("./lib/aplog");
 const { addMessage, removeMessage, updateMessage } = require('./lib/addMessage');
 const { addActivity } = require("./lib/addActivity")
+
+function verifySignature(header, body, publicKey) {
+    console.log(publicKey)
+    const { signature } = header;
+    const signingString = `(request-target): ${header['(request-target)']}\nhost: ${header.host}\ndate: ${header.date}\ndigest: ${header.digest}\ncontent-type: ${header['content-type']}`;
+    
+    const signatureParams = signature.split(',').reduce((params, param) => {
+      const [key, value] = param.split('=');
+      params[key.trim()] = value.replace(/"/g, '').trim();
+      return params;
+    }, {});
+    
+    const signatureBuffer = Buffer.from(signatureParams.signature, 'base64');
+    
+    const verifier = crypto.createVerify('RSA-SHA256');
+    verifier.update(signingString);
+    
+    const verified = verifier.verify(publicKey, signatureBuffer);
+    
+    if (verified) {
+      console.log('Signature verified successfully');
+    } else {
+      console.log('Signature verification failed');
+    }
+  }
 
 router.get('/:username', async function (req, res) {
     const aplog = await startAPLog(req)
@@ -290,6 +314,12 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     }else{
         console.log("FALSE")
     }
+
+    const account = await knex("apaccounts").where("uri", "=", req.body.actor).select("pubkey").first();
+    const publicKey = account.pubkey;
+
+    // VERIFY
+    verifySignature(req.headers, req.body, publicKey);
 
     await addActivity(req.body)
     .then(async(proceed) => {

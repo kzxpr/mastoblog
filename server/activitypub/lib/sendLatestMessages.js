@@ -21,7 +21,9 @@ async function sendLatestMessages(follower, user_uri){
                 let inbox = await findInbox(follower)
                 let myURL = new URL(follower);
                 let targetDomain = myURL.hostname;
-                await signAndSend(wrapped, user_uri, targetDomain, inbox)
+                const account = await knex("apaccounts").where("uri", "=", local_uri).select("apikey").first();
+                const apikey = account.apikey;
+                await signAndSend(wrapped, user_uri, targetDomain, inbox, apikey)
                 .then((data) => {
                     console.log("SEND LATEST NOTE RESPONSE",data)
                 })

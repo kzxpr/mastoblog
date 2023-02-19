@@ -87,7 +87,58 @@ router.get("/:username", (req, res) => {
         body += "<li><a href='"+tester_root+"/"+username+"/"+option+"'>"+option+"</a></li>"
     }
     body += "</ul>"
+    body += "Additional stuff"
+    body += "<ul>"
+    body += "<li><a href='"+tester_root+"/"+username+"/edit/account'>Update account</a></li>"
+    body += "</ul>"
     res.send(body)
+})
+
+router.route("/:username/edit/account")
+    .post(async (req, res, next) => {
+        const domain = req.app.get('domain');
+        const { username } = req.params;
+        const account_uri = "https://"+domain+"/u/"+username;
+        if(req.body){
+            // THIS IS POST
+            const { displayname, summary, icon } = req.body;
+            const upd = await knex("apaccounts").update({ displayname, summary, icon }).where("uri", "=", account_uri)
+            .then((d) => {
+                res.locals.msg = "SUCCESS - <a href='"+tester_root+"/"+username+"/Update/Id'>send notification!</a>"
+            })
+            .catch((e) => {
+                res.locals.msg = "ERROR updating profile"
+                console.error("ERROR updating profile", e)
+            })
+        }
+        next();
+    })
+    .all(async(req, res) => {
+        const domain = req.app.get('domain');
+        const { username } = req.params;
+        const account_uri = "https://"+domain+"/u/"+username;
+
+        await knex("apaccounts").where("uri", "=", account_uri).first()
+        .then((account) => {
+            var body = header();
+            body += "Hi "+username+".<br>";
+            if (res.locals.msg){
+                body += "<div style='border: 1px solid #000; padding: 10px; margin: 10px'>"+res.locals.msg+"</div>"
+            }
+            body += "<form action='"+tester_root+"/"+username+"/edit/account' method='post'>"
+            body += "<table>"
+            body += "<tr><td>Display name<td><input type='text' name='displayname' value='"+account.displayname+"'><td>name displayed</tr>"
+            body += "<tr><td>Summary<td><input type='text' name='summary' value='"+account.summary+"'><td>name displayed</tr>"
+            body += "<tr><td>Icon<td><input type='text' name='icon' value='"+account.icon+"'><td>name displayed</tr>"
+            body += "</table>"
+            body += "<input type='submit' value='Update'>";
+            body += "</form>"
+            res.send(body)
+        })
+        .catch((e) => {
+            console.error("ERROR looking up account")
+            res.send("Error looking up account")
+        })
 })
 
 router.get("/:username/:activity", (req, res) => {
@@ -111,7 +162,7 @@ router.get("/:username/:activity", (req, res) => {
 
 async function makeObject(object, params, body){
     const { domain, username, guid, published } = params;
-    const stringobj = body.stringobj !== undefined ? body.stringobj : "https://"+domain+"/u/"+username+"/";
+    const stringobj = body.stringobj !== undefined ? body.stringobj : "https://"+domain+"/u/"+username;
     const content = body.content !== undefined ? body.content : "This is the content of the message <i>including</i> HTML";
     const summary = body.summary !== undefined ? body.summary : "This is the summary text...";
     const name = body.name !== undefined ? body.name : "This is name - no HTML here";
@@ -382,6 +433,11 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     const followshare = ((req.body.followshare !== undefined) && (req.body.followshare!="false"))
         ? true : false;
     
+    // TEMPORARY:
+    const account_uri = "https://"+domain+"/u/"+username;
+    const account = await knex("apaccounts").where("uri", "=", account_uri).select("apikey").first();
+    const apikey = account.apikey;
+    
     const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain })
     const recipient_list = to_field.concat(cc_field)
 
@@ -415,7 +471,7 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     }
 
     console.log("RECIPIENTS", recipients)
-    console.log("A", activity)
+    //console.log("A", activity)
 
     /* ADD ACTIVITY TO DATABASE */
     if(activity == "Create" && typeof obj === 'object'){
@@ -433,7 +489,7 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
         let inbox = await findInbox(recipient)
         let recipient_url = new URL(recipient);
         let targetDomain = recipient_url.hostname;
-        await signAndSend(wrapped, uri, targetDomain, inbox)
+        await signAndSend(wrapped, uri, targetDomain, inbox, apikey)
             .then((data) => {
                 console.log("SEND NOTE RESPONSE",data)
                 body += "To: "+recipient+" = OK<br>";

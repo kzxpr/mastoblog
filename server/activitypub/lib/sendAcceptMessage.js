@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const { signAndSend } = require("./signAndSend")
-const { findInbox } = require("./addAccount")
+const { findInbox } = require("./addAccount");
+const db = require("./../../../knexfile");
+const knex = require("knex")(db)
 
 async function sendAcceptMessage(thebody, local_uri, targetDomain, domain) {
     const guid = crypto.randomBytes(16).toString('hex');
@@ -12,7 +14,9 @@ async function sendAcceptMessage(thebody, local_uri, targetDomain, domain) {
       'object': thebody,
     };
     let inbox = await findInbox(message.object.actor)
-    await signAndSend(message, local_uri, targetDomain, inbox)
+    const account = await knex("apaccounts").where("uri", "=", local_uri).select("apikey").first();
+    const apikey = account.apikey;
+    await signAndSend(message, local_uri, targetDomain, inbox, apikey)
     .then((data) => {
       console.log("SENT ACCEPT ID", guid, "on", local_uri, data)
       return {msg: data}

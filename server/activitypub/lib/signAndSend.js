@@ -58,15 +58,14 @@ async function verifySignature(message, pubkey, signature, algorithm = "sha256")
   return result;
 }*/
 
-async function signAndSend(message, local_uri, targetDomain, inbox) { 
-  //console.log("RUN signAndSend", message, local_uri, targetDomain, inbox)
+async function signAndSend(message, local_uri, targetDomain, inbox, apikey) { 
   return new Promise(async (resolve, reject) => {
     // get the URI of the actor object and append 'inbox' to it
     let inboxFragment = inbox.replace('https://'+targetDomain,''); // HARD-CODED
     //console.log("FRAG", inboxFragment)
 
     // get the private key
-    const result = await knex("apaccounts").where("uri", "=", local_uri).select("privkey").first();
+    const result = await knex("apaccounts").where("uri", "=", local_uri).andWhere("apikey", "=", apikey).select("privkey").first();
     if (result === undefined) {
       reject("No account found for "+local_uri);
     } else {

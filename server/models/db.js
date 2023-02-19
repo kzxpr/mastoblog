@@ -148,6 +148,14 @@ class Message extends Model {
 					to: 'apmessages.inReplyTo'
 				}
 			},
+			repliedto: {
+				relation: Model.HasOneRelation,
+				modelClass: Message,
+				join: {
+					from: 'apmessages.inReplyTo',
+					to: 'apmessages.uri'
+				}
+			},
 			likes: {
 				relation: Model.HasManyRelation,
 				modelClass: Like,

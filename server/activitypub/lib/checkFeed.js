@@ -6,12 +6,45 @@ const knex = require("knex")(db)
 const { findOutbox, lookupAccountByURI } = require("./addAccount")
 const { getObjectItem } = require("./ap-feed")
 const { addMessage, unwrapMessage } = require("./addMessage");
-
+const { Message } = require("./../../models/db")
 
 function getFollowed(){
     // this should somehow exclude users on the same server.....?
-    return ["https://todon.eu/users/kzxpr", "https://todon.nl/users/NOISEBOB", "https://kolektiva.social/users/glaspest", "https://mastodon.social/users/NilsenMuseum"];//, "https://libranet.de/profile/kzxpr"]
+    //return ["https://todon.eu/users/kzxpr", "https://todon.nl/users/NOISEBOB", "https://kolektiva.social/users/glaspest", "https://mastodon.social/users/NilsenMuseum"];//, "https://libranet.de/profile/kzxpr"]
+    return [];
     //return ["AMOK@todon.nl", "kzxpr@todon.eu"];//, "NOISEBOB@todon.nl", "djhnm@www.yiny.org", "NilsenMuseum@mastodon.social", "pxsx@todon.nl"]; //"asbjorn@norrebro.space", "apconf@conf.tube", "schokoladen@mobilize.berlin", "kzasdxpr@todon.eu"];
+}
+
+async function checkOrphans(){
+    return new Promise(async(resolve, reject) => {
+        // Then look for inReplyTo-tags
+        const threaded_msg = await Message.query().whereNotNull("inReplyTo")
+        .withGraphFetched("repliedto")
+        .then(async(orphans) => {
+            for(let orphan of orphans){
+                if(orphan.repliedto==null){
+                    const orphan_uri = orphan.inReplyTo;
+
+                    // lookup message
+                    await getObjectItem(orphan_uri, { Accept: 'application/activity+json' })
+                    .then(async (message) => {
+                        await addMessage(message)
+                        .then((d) => {
+                            resolve("OK")
+                        })
+                        .catch((e) => {
+                            console.error("E", e)
+                            reject("Error adding message: "+orphan_uri)
+                        })
+                    })
+                    .catch((e) => {
+                        console.error("ERROR looking up the orphan message on server...", e)
+                        reject("Error looking up message: "+orphan_uri)
+                    })
+                }
+            }
+        })
+    })
 }
 
 async function checkFeed(req, res){
@@ -45,6 +78,15 @@ async function checkFeed(req, res){
         .catch((e) => {
             console.warn("ERROR while getObjectItem on "+outbox_uri, e)
         })
+    }
+
+    await checkOrphans()
+    .then((d) => {
+        console.log("Checking orphans")
+    })
+    .catch((e) => {
+        console.error("ERROR checking orphans", e)
+    })
 
         // NOW IT HAS IMPORTED ALL (NEW) MESSAGES, THEN LOOKUP NEW ADDRESSEES AND ADD THEIR ACCOUNTS
         await knex("apaddressee").select("account_uri").where("type", "=", 0).groupBy("account_uri")
@@ -66,7 +108,7 @@ async function checkFeed(req, res){
             .catch((e) => {
                 console.error("ERROR looking up addreesees", e)
             })
-    }
+    
     res.send("OK")
 }
 
