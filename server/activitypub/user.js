@@ -281,8 +281,16 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     }
 
     // VERIFY BY SIGNATURE
+    var publicKey = "";
     const account = await knex("apaccounts").where("uri", "=", req.body.actor).select("pubkey").first();
-    const publicKey = account.pubkey;
+    if(account){
+        publicKey = account.pubkey;
+    }else{
+        console.log("Account not found!!!!!!!")
+        res.sendStatus(404)
+        return;
+    }
+    
     const verified = verifySign({ method: 'POST', url: req.originalUrl, ...req.headers}, req.body, publicKey);
     console.log("V",verified)
     if(!verified){

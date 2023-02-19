@@ -159,7 +159,7 @@ function makePage(username, domain, guid, params){
     }
 }
 
-function makeEvent(username, domain, guid, params){
+async function makeEvent(username, domain, guid, params){
     const { startTime, endTime, name, published, url, summary, to, cc, sensitive, public, followshare } = params;
     var url_link;
     if(!url){
@@ -185,8 +185,9 @@ function makeEvent(username, domain, guid, params){
     }
 }
 
-function makeQuestion(username, domain, guid, params){
-    const { questiontype, options, content, sensitive, published, url, closed, to, cc, public, followshare } = params;
+async function makeQuestion(username, domain, guid, params){
+    const { questiontype, options, content, sensitive, published, url, closed, to, cc, public, followshare, mediaType, href, n_attachs } = params;
+    console.log("HEJ", n_attachs, href, mediaType)
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -208,7 +209,6 @@ function makeQuestion(username, domain, guid, params){
     if(closed){
         obj["closed"] = closed;
     }
-    //const parsed_options = JSON.parse(options);
 
     var parsed_options;
     if(options && options != null){
@@ -233,11 +233,45 @@ function makeQuestion(username, domain, guid, params){
         obj["oneOf"] = parsed_options;
     }
 
+    if(href && href != null){
+        console.log("NU", href)
+        var urls = href;
+        var types = mediaType;
+        if(!Array.isArray(href)){
+            urls = new Array(href)
+            types = new Array(mediaType)
+        }
+        attachments = new Array();
+        for(let i = 0; i < n_attachs; i++){
+            if(urls[i] !== undefined){
+                var a = {};
+                a.type = "Note";
+                a.mediaType = types[i];
+                a.url = urls[i];
+                a.name = "Untitled"
+                a.blurhash = await encodeImageToBlurhash(a.url)
+                .then((blurhash) => {
+                    return blurhash
+                })
+                .catch((e) => {
+                    console.error("ERROR encoding blurhash", e)
+                })
+                a.width = 387;
+                a.height = 258;
+                attachments.push(a)
+            }
+            
+        }
+        obj["attachment"] = attachments;
+    }
+
+    console.log("FIN", obj)
+
     return obj;
 }
 
-function makeImage(username, domain, guid, params){
-    const { name, href, to, cc, mediaType, inReplyTo, sensitive, url, public, followshare } = params;
+async function makeImage(username, domain, guid, params){
+    const { name, href, to, cc, mediaType, inReplyTo, sensitive, url, public, followshare, n_attachs } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -257,13 +291,37 @@ function makeImage(username, domain, guid, params){
         obj["inReplyTo"] = inReplyTo;
     }
     obj["name"] = name;
-    var links = new Array();
-    links.push({ "type": "Link", "href": href, "mediaType": mediaType })
-    obj["url"] = links;
-
-    var attachments = new Array();
-    attachments.push({ url: href, summary: name })
-    obj["attachment"] = attachments;
+    
+    if(href && href != null){
+        var urls = href;
+        var types = mediaType;
+        if(!Array.isArray(href)){
+            urls = new Array(href)
+            types = new Array(mediaType)
+        }
+        attachments = new Array();
+        for(let i = 0; i < n_attachs; i++){
+            if(urls[i] !== undefined){
+                var a = {};
+                a.type = "Link";
+                a.mediaType = types[i];
+                a.url = urls[i];
+                a.name = "Untitled"
+                a.blurhash = await encodeImageToBlurhash(a.url)
+                .then((blurhash) => {
+                    return blurhash
+                })
+                .catch((e) => {
+                    console.error("ERROR encoding blurhash", e)
+                })
+                a.width = 387;
+                a.height = 258;
+                attachments.push(a)
+            }
+            
+        }
+        obj["attachment"] = attachments;
+    }
 
     return obj;
 }

@@ -13,6 +13,63 @@ const { addMessage } = require("./lib/addMessage")
 
 const tester_root = "/ap/admin/tester";
 
+function addName(options){
+    const { name } = options;
+
+    var body = "<tr><td>name</td><td><input type='text' name='name' value='"+name+"'></td></tr>"
+    var hidden = "<input type='hidden' name='name' value='"+name+"'>";
+
+    return { body, hidden }
+}
+
+function addContent(options){
+    const { content } = options;
+
+    var body = "<tr><td>content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
+    var hidden = "<input type='hidden' name='content' value='"+content+"'>";
+
+    return { body, hidden }
+}
+
+function addSummary(options){
+    const { summary } = options;
+
+    var body = "<tr><td>summary</td><td><input type='text' name='summary' value='"+summary+"'></td></tr>"
+    var hidden = "<input type='hidden' name='summary' value='"+summary+"'>";
+
+    return { body, hidden }
+}
+
+function addAttachments(options){
+    const { mediaType, href, n_attachs } = options;
+    var body = "<tr><td colspan='3'><u>Attachments:</u><td></tr>";
+    body += "<tr><td>number of attachments</td><td><input type='number' name='n_attachs' value='"+n_attachs+"'></td></tr>"
+    var hidden = "<input type='hidden' name='n_attachs' value='"+n_attachs+"'>";
+    const attachment_types = new Array("image/png", "image/jpeg", "audio/mpeg")
+    if(n_attachs>0){
+        for(let n = 0; n < n_attachs; n++){
+            body += "<tr>"
+            body += "<td>attachment"+n+"</td>";
+            body += "<td><input type='text' name='href' value='"+(href[n] ? href[n] : "")+"'></td>";
+            body += "<td><select name='mediaType' value='"+mediaType[n]+"'>"
+            for(let attachment_type of attachment_types){
+                body += "<option value='"+attachment_type+"' ";
+                if(attachment_type == mediaType[n]){
+                    body += "selected"
+                }
+                body += ">"+attachment_type+"</option>"
+            }
+            body += "</select></td>"
+            body += "</tr>"
+
+            hidden += "<input type='hidden' name='mediaType' value='"+mediaType[n]+"'>";
+            hidden += "<input type='hidden' name='href' value='"+href[n]+"'>";
+        }
+    }
+
+    return { body, hidden };
+}
+
 function header(){
     var body = "<h1>Let's test ActivityPub</h1>"
     body += "LIKE (= favourite): Like > Id > Message as 'id' + author in 'to'<br>"
@@ -168,7 +225,7 @@ async function makeObject(object, params, body){
     const name = body.name !== undefined ? body.name : "This is name - no HTML here";
     const to = body.to !== undefined ? body.to : "https://todon.eu/users/kzxpr";
     const cc = body.cc !== undefined ? body.cc : "";
-    const sensitive = body.sensitive !== undefined ? true : false;
+    const sensitive = ((body.sensitive !== undefined) && (body.sensitive=="true")) ? true : false;
     const startTime = body.startTime !== undefined ? body.startTime : "2023-12-31T23:00:00-08:00";
     const endTime = body.endTime !== undefined ? body.endTime : "2024-01-01T06:00:00-08:00";
     const inReplyTo = body.inReplyTo !== undefined ? body.inReplyTo : "";
@@ -247,64 +304,38 @@ async function makeObject(object, params, body){
         hidden += "<input type='hidden' name='stringobj' value='"+stringobj+"'>";
         obj = stringobj;
     }else if(object=="Note"){
-        //body += "<label>name</label><input type='text' name='name' value='"+name+"'><br>"
-        body += "<tr><td>content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
-        body += "<tr><td>summary</td><td><input type='text' name='summary' value='"+summary+"'></td></tr>"
+        const content_field = addContent({content})
+        const summary_field = addSummary({summary})
+        const attachment_field = addAttachments({ mediaType, href, n_attachs });
 
-        body += "<tr><td colspan='3'><u>Attachments:</u><td></tr>";
-        body += "<tr><td>number of attachments</td><td><input type='number' name='n_attachs' value='"+n_attachs+"'></td></tr>"
-        const attachment_types = new Array("image/png", "image/jpeg", "audio/mpeg")
-        if(n_attachs>0){
-            for(let n = 0; n < n_attachs; n++){
-                body += "<tr>"
-                body += "<td>attachment"+n+"</td>";
-                body += "<td><input type='text' name='href' value='"+(href[n] ? href[n] : "")+"'></td>";
-                body += "<td><select name='mediaType' value='"+mediaType[n]+"'>"
-                for(let attachment_type of attachment_types){
-                    body += "<option value='"+attachment_type+"' ";
-                    if(attachment_type == mediaType[n]){
-                        body += "selected"
-                    }
-                    body += ">"+attachment_type+"</option>"
-                }
-                body += "</select></td>"
-                body += "</tr>"
-            }
-        }
-        
-        //hidden += "<input type='hidden' name='name' value='"+name+"'>";
-        hidden += "<input type='hidden' name='content' value='"+content+"'>";
-        hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        hidden += "<input type='hidden' name='n_attachs' value='"+n_attachs+"'>";
-        if(n_attachs>0){
-            for(let n = 0; n < n_attachs; n++){
-                hidden += "<input type='hidden' name='mediaType' value='"+mediaType[n]+"'>";
-                hidden += "<input type='hidden' name='href' value='"+href[n]+"'>";
-            }
-        }
+        body += content_field.body + summary_field.body + attachment_field.body;
+        hidden += content_field.hidden + summary_field.hidden + attachment_field.hidden;
+
         obj = await makeNote(username, domain, manual_guid, { published, name, n_attachs, href, mediaType, content, to, cc, sensitive, url, summary, inReplyTo, public, followshare })
     }else if(object=="Image"){
-        body += "<tr><td>name</td><td><input type='text' name='name' value='"+name+"'></td></tr>"
-        body += "<tr><td>href</td><td><input type='text' name='href' value='"+href+"'></td></tr>"
-        body += "<tr><td>mediaType</td><td><input type='text' name='mediaType' value='"+mediaType+"'></td></tr>"
-        hidden += "<input type='hidden' name='name' value='"+name+"'>";
-        hidden += "<input type='hidden' name='href' value='"+href+"'>";
-        hidden += "<input type='hidden' name='mediaType' value='"+mediaType+"'>";
-        obj = makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, sensitive, public, followshare })
+        const name_field = addName({name})
+        const attachment_field = addAttachments({ mediaType, href, n_attachs });
+        body += name_field.body + attachment_field.body;
+        hidden += name_field.hidden + attachment_field.hidden;
+        obj = await makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, sensitive, public, followshare, href, mediaType, n_attachs })
     }else if(object=="Event"){
-        body += "<tr><td>name</td><td><input type='text' name='name' value='"+name+"'></td></tr>"
-        //body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
+        const name_field = addName({name})
+        const attachment_field = addAttachments({ mediaType, href, n_attachs });
+        body += name_field.body + attachment_field.body;
+        hidden += name_field.hidden + attachment_field.hidden;
         body += "<tr><td>summary</td><td><input type='text' name='summary' value='"+summary+"'></td></tr>"
         body += "<tr><td>startTime</td><td><input type='text' name='startTime' value='"+startTime+"'></td></tr>"
         body += "<tr><td>endTime</td><td><input type='text' name='endTime' value='"+endTime+"'></td></tr>"
-        hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='startTime' value='"+startTime+"'>";
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         //hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, sensitive, startTime, endTime, url, summary, public, followshare })
+        obj = await makeEvent(username, domain, manual_guid, { published, name, content, to, cc, sensitive, startTime, endTime, url, summary, public, followshare, mediaType, href, n_attachs })
     }else if(object=="Question"){
-        body += "<tr><td>content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
+        const content_field = addContent({content})
+        const attachment_field = addAttachments({ mediaType, href, n_attachs });
+        body += content_field.body;
+        hidden += content_field.hidden;
         body += "<tr><td>question type</td><td><select name='questiontype'>";
         const questiontypes = new Array("anyOf", "oneOf");
         for(let t of questiontypes){
@@ -326,10 +357,8 @@ async function makeObject(object, params, body){
         }
         body += "<tr><td>closed</td><td><input type='text' name='closed' value='"+closed+"'></td></tr>"
         body += "<tr><td>endTime</td><td><input type='text' name='endTime' value='"+endTime+"'></td></tr>"
-        hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='questiontype' value='"+questiontype+"'>";
         hidden += "<input type='hidden' name='n_options' value='"+n_options+"'>";
-        //hidden += "<input type='hidden' name='options' value='"+options+"'>";
         if(n_options>0){
             for(let n = 0; n < n_options; n++){
                 hidden += "<input type='hidden' name='options' value='"+options[n]+"'>";
@@ -337,7 +366,10 @@ async function makeObject(object, params, body){
         }
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         hidden += "<input type='hidden' name='closed' value='"+closed+"'>";
-        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, sensitive, questiontype, options, endTime, closed, public, followshare })
+        body += attachment_field.body;
+        hidden += attachment_field.hidden;
+        obj = await makeQuestion(username, domain, manual_guid, { published, content, to, cc, sensitive, questiontype, options, endTime, closed, public, followshare, n_attachs, mediaType, href })
+        console.log("UD", obj)
     }else{
         body += "<tr><td>Content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
