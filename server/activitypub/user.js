@@ -1,7 +1,7 @@
 'use strict';
-const express = require('express'),
-    crypto = require('crypto'),
-    router = express.Router();
+const express = require('express');
+const crypto = require('crypto');
+const router = express.Router();
 
 const db = require("./../../knexfile")
 const knex = require("knex")(db)
@@ -22,23 +22,35 @@ const { addMessage, removeMessage, updateMessage } = require('./lib/addMessage')
 const { addActivity } = require("./lib/addActivity")
 
 function verifySignature(header, body, publicKey) {
-    console.log(publicKey)
     const { signature } = header;
-    const signingString = `(request-target): ${header['(request-target)']}\nhost: ${header.host}\ndate: ${header.date}\ndigest: ${header.digest}\ncontent-type: ${header['content-type']}`;
-    
+  
     const signatureParams = signature.split(',').reduce((params, param) => {
       const [key, value] = param.split('=');
       params[key.trim()] = value.replace(/"/g, '').trim();
       return params;
     }, {});
-    
-    const signatureBuffer = Buffer.from(signatureParams.signature, 'base64');
-    
-    const verifier = crypto.createVerify('RSA-SHA256');
+  
+    const { algorithm, headers, signature: signatureValue } = signatureParams;
+    const signingHeaders = headers.split(' ');
+  
+    const signingStringHeaders = signingHeaders.reduce((str, signingHeader) => {
+      const headerValue = header[signingHeader.toLowerCase()];
+      if (headerValue) {
+        return `${str}${signingHeader.toLowerCase()}: ${headerValue}\n`;
+      }
+      return str;
+    }, '');
+  
+    const signingString = `(request-target): ${header.method.toLowerCase()} ${header.url}\n${signingStringHeaders.substr(0, (signingStringHeaders.length-1))}`;
+  
+    const signatureBuffer = Buffer.from(signatureValue, 'base64');
+    //const pubkeyBuffer = Buffer.from(publicKey, 'ascii');
+  
+    const verifier = crypto.createVerify(algorithm);
     verifier.update(signingString);
-    
+  
     const verified = verifier.verify(publicKey, signatureBuffer);
-    
+  
     if (verified) {
       console.log('Signature verified successfully');
     } else {
@@ -307,8 +319,6 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     console.log("POST", clc.blue("/inbox"), "to "+username+" ("+reqtype+") from "+req.body.actor)
 
     const digest = makeDigest(req.body);
-    console.log(digest);
-    console.log(req.headers.digest)
     if(digest==req.headers.digest){
         console.log("MATCH")
     }else{
@@ -319,7 +329,7 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     const publicKey = account.pubkey;
 
     // VERIFY
-    verifySignature(req.headers, req.body, publicKey);
+    verifySignature({ method: 'POST', url: req.originalUrl, ...req.headers}, req.body, publicKey);
 
     await addActivity(req.body)
     .then(async(proceed) => {
