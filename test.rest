@@ -11,6 +11,16 @@ Accept: application/activity+json
 
 ###
 
+GET https://todon.eu/users/kzxpr/outbox?page=true
+Accept: application/activity+json
+
+###
+
+GET https://todon.eu/users/kzxpr/statuses/109857105308944998/replies?only_other_accounts=true&page=true
+Accept: application/activity+json
+
+###
+
 POST https://hackademiet.dk/u/test/outbox
 Content-Type: application/json
 

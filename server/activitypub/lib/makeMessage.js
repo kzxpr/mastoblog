@@ -1,7 +1,7 @@
 const { encodeImageToBlurhash } = require("./blurhash")
 
 function makeMessage(uri, guid, params){
-    const { published, content, url, cc, to, public, followshare } = params;
+    const { published, content, url, cc, to, public, followshare, sensitive } = params;
     var url_link;
     if(!url){
         url_link = uri+"/statuses/"+guid;
@@ -19,6 +19,7 @@ function makeMessage(uri, guid, params){
         "attributedTo": uri,
         "to": to,
         "cc": cc,
+        "sensitive": sensitive,
         "url": url_link,
         "content": content,
         "contentMap": {
@@ -51,7 +52,7 @@ function handleAddress(params){
 }
 
 async function makeNote(username, domain, guid, params){
-    const { published, name, content, to, cc, url, n_attachs, href, mediaType, summary, inReplyTo, public, followshare } = params;
+    const { published, name, content, sensitive, to, cc, url, n_attachs, href, mediaType, summary, inReplyTo, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -67,6 +68,7 @@ async function makeNote(username, domain, guid, params){
     const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain });
     obj["to"] = to_field;
     obj["cc"] = cc_field;
+    obj["sensitive"] = sensitive;
     obj["url"] = url_link;
     if(inReplyTo){
         obj["inReplyTo"] = inReplyTo;
@@ -108,7 +110,7 @@ async function makeNote(username, domain, guid, params){
 }
 
 function makeArticle(username, domain, guid, params){
-    const {published, content, name, url, to, cc, public, followshare } = params;
+    const { published, content, name, url, to, cc, public, followshare, sensitive } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -124,6 +126,7 @@ function makeArticle(username, domain, guid, params){
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": to_field,
         "cc": cc_field,
+        "sensitive": sensitive,
         "url": url_link,
         "name": name,
         "content": content,
@@ -134,7 +137,7 @@ function makeArticle(username, domain, guid, params){
 }
 
 function makePage(username, domain, guid, params){
-    const { published, content, url, public, followshare, to, cc } = params;
+    const { published, content, url, public, followshare, sensitive, to, cc } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -150,13 +153,14 @@ function makePage(username, domain, guid, params){
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": to_field,
         "cc": cc_field,
+        "sensitive": sensitive,
         "url": url_link,
         "content": content,
     }
 }
 
 function makeEvent(username, domain, guid, params){
-    const { startTime, endTime, name, published, url, summary, to, cc, public, followshare } = params;
+    const { startTime, endTime, name, published, url, summary, to, cc, sensitive, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -174,6 +178,7 @@ function makeEvent(username, domain, guid, params){
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": to_field,
         "cc": cc_field,
+        "sensitive": sensitive,
         "url": url_link,
         "name": name,
         "summary": summary
@@ -181,7 +186,7 @@ function makeEvent(username, domain, guid, params){
 }
 
 function makeQuestion(username, domain, guid, params){
-    const { questiontype, options, content, published, url, closed, to, cc, public, followshare } = params;
+    const { questiontype, options, content, sensitive, published, url, closed, to, cc, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -197,6 +202,7 @@ function makeQuestion(username, domain, guid, params){
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": to_field,
         "cc": cc_field,
+        "sensitive": sensitive,
         "content": content
     }
     if(closed){
@@ -231,7 +237,7 @@ function makeQuestion(username, domain, guid, params){
 }
 
 function makeImage(username, domain, guid, params){
-    const { name, href, to, cc, mediaType, inReplyTo, url, public, followshare } = params;
+    const { name, href, to, cc, mediaType, inReplyTo, sensitive, url, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -246,6 +252,7 @@ function makeImage(username, domain, guid, params){
     const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain });
     obj["to"] = to_field;
     obj["cc"] = cc_field;
+    obj["sensitive"] = sensitive;
     if(inReplyTo){
         obj["inReplyTo"] = inReplyTo;
     }

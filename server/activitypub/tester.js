@@ -112,16 +112,15 @@ router.get("/:username/:activity", (req, res) => {
 async function makeObject(object, params, body){
     const { domain, username, guid, published } = params;
     const stringobj = body.stringobj !== undefined ? body.stringobj : "https://"+domain+"/u/"+username+"/";
-    const content = body.content !== undefined ? body.content : "This is the content of the message <i>including</i> HTML"
-    const summary = body.summary !== undefined ? body.summary : "This is the summary text..."
-    const name = body.name !== undefined ? body.name : "This is name - no HTML here"
-    const to = body.to !== undefined ? body.to : "https://todon.eu/users/kzxpr"
-    const cc = body.cc !== undefined ? body.cc : ""
+    const content = body.content !== undefined ? body.content : "This is the content of the message <i>including</i> HTML";
+    const summary = body.summary !== undefined ? body.summary : "This is the summary text...";
+    const name = body.name !== undefined ? body.name : "This is name - no HTML here";
+    const to = body.to !== undefined ? body.to : "https://todon.eu/users/kzxpr";
+    const cc = body.cc !== undefined ? body.cc : "";
+    const sensitive = body.sensitive !== undefined ? true : false;
     const startTime = body.startTime !== undefined ? body.startTime : "2023-12-31T23:00:00-08:00";
     const endTime = body.endTime !== undefined ? body.endTime : "2024-01-01T06:00:00-08:00";
     const inReplyTo = body.inReplyTo !== undefined ? body.inReplyTo : "";
-    //const anyOf = body.anyOf !== undefined ? body.anyOf : "";
-    //const oneOf = body.oneOf !== undefined ? body.oneOf : '[{"type": "Note","name": "Yes"},{"type": "Note","name": "No"}]';
     const questiontype = body.questiontype !== undefined ? body.questiontype : "oneOf";
     const n_options = body.n_options !== undefined ? body.n_options : 2;
     const closed = body.closed !== undefined ? body.closed : "";
@@ -176,13 +175,19 @@ async function makeObject(object, params, body){
     }
     body += "><td>(include user's follower)</tr>";
     body += "<tr><td>inReplyTo:<td> <input type='text' name='inReplyTo' value='"+inReplyTo+"' style='width: 100%; max-width: 300px;'><td>(url - if using this remember to include owner in 'to')</tr>";
-    //
+    body += "<tr><td>sensitive:<td><input type='checkbox' name='sensitive' value='true'";
+    if(sensitive){
+        body += " checked";
+    }
+    body += "><td>(message cannot be boosted)</tr>"
+    
     hidden += "<input type='hidden' name='to' value='"+to+"'>";
     hidden += "<input type='hidden' name='public' value='"+public+"'>";
     hidden += "<input type='hidden' name='cc' value='"+cc+"'>";
     hidden += "<input type='hidden' name='followshare' value='"+followshare+"'>";
     hidden += "<input type='hidden' name='inReplyTo' value='"+inReplyTo+"'>";
     hidden += "<input type='hidden' name='manual_guid' value='"+manual_guid+"'>";
+    hidden += "<input type='hidden' name='sensitive' value='"+sensitive+"'>";
     
     body += "<tr><td colspan='3'><u>Special parameters</u></tr>"
     
@@ -226,7 +231,7 @@ async function makeObject(object, params, body){
                 hidden += "<input type='hidden' name='href' value='"+href[n]+"'>";
             }
         }
-        obj = await makeNote(username, domain, manual_guid, { published, name, n_attachs, href, mediaType, content, to, cc, url, summary, inReplyTo, public, followshare })
+        obj = await makeNote(username, domain, manual_guid, { published, name, n_attachs, href, mediaType, content, to, cc, sensitive, url, summary, inReplyTo, public, followshare })
     }else if(object=="Image"){
         body += "<tr><td>name</td><td><input type='text' name='name' value='"+name+"'></td></tr>"
         body += "<tr><td>href</td><td><input type='text' name='href' value='"+href+"'></td></tr>"
@@ -234,7 +239,7 @@ async function makeObject(object, params, body){
         hidden += "<input type='hidden' name='name' value='"+name+"'>";
         hidden += "<input type='hidden' name='href' value='"+href+"'>";
         hidden += "<input type='hidden' name='mediaType' value='"+mediaType+"'>";
-        obj = makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, public, followshare })
+        obj = makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, sensitive, public, followshare })
     }else if(object=="Event"){
         body += "<tr><td>name</td><td><input type='text' name='name' value='"+name+"'></td></tr>"
         //body += "<label>content</label><input type='text' name='content' value='"+content+"'><br>"
@@ -246,7 +251,7 @@ async function makeObject(object, params, body){
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         //hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, startTime, endTime, url, summary, public, followshare })
+        obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, sensitive, startTime, endTime, url, summary, public, followshare })
     }else if(object=="Question"){
         body += "<tr><td>content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
         body += "<tr><td>question type</td><td><select name='questiontype'>";
@@ -281,11 +286,11 @@ async function makeObject(object, params, body){
         }
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         hidden += "<input type='hidden' name='closed' value='"+closed+"'>";
-        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, questiontype, options, endTime, closed, public, followshare })
+        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, sensitive, questiontype, options, endTime, closed, public, followshare })
     }else{
         body += "<tr><td>Content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
-        obj = makeArticle(username, domain, manual_guid, published, content, name, url, to, cc, public, followshare)
+        obj = makeArticle(username, domain, manual_guid, { published, content, name, url, to, cc, sensitive, public, followshare })
     }
     body += "</table>"
     return { form_append: body, hidden_append: hidden, obj }
@@ -327,7 +332,6 @@ router.all("/:username/:activity/:object", async (req, res) => {
     body += "<form action='"+tester_root+"/"+username+"/"+activity+"/"+object+"' method='post'>"
     
     const { form_append, hidden_append, obj } = await makeObject(object, { username, domain, published, guid }, req.body)
-    //console.log("BO", obj)
     body += form_append;
     hidden += hidden_append;
     body += "<br><input type='submit' value='Update preview'>"
@@ -344,8 +348,6 @@ router.all("/:username/:activity/:object", async (req, res) => {
 router.post("/:username/:activity/:object/sign", async (req, res) => {
     const { username, activity, object } = req.params;
     const domain = req.app.get('domain');
-
-    console.log("BODY", req.body)
     
     const to = req.body.to !== undefined ? req.body.to : "";
     const cc = req.body.cc !== undefined ? req.body.cc : "";
