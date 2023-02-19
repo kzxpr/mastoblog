@@ -1,6 +1,5 @@
 'use strict';
 const express = require('express');
-const crypto = require('crypto');
 const router = express.Router();
 
 const db = require("./../../knexfile")
@@ -20,43 +19,7 @@ const { addAnnounce, removeAnnounce } = require("./lib/addAnnounce")
 const { startAPLog, endAPLog } = require("./lib/aplog");
 const { addMessage, removeMessage, updateMessage } = require('./lib/addMessage');
 const { addActivity } = require("./lib/addActivity")
-
-function verifySignature(header, body, publicKey) {
-    const { signature } = header;
-  
-    const signatureParams = signature.split(',').reduce((params, param) => {
-      const [key, value] = param.split('=');
-      params[key.trim()] = value.replace(/"/g, '').trim();
-      return params;
-    }, {});
-  
-    const { algorithm, headers, signature: signatureValue } = signatureParams;
-    const signingHeaders = headers.split(' ');
-  
-    const signingStringHeaders = signingHeaders.reduce((str, signingHeader) => {
-      const headerValue = header[signingHeader.toLowerCase()];
-      if (headerValue) {
-        return `${str}${signingHeader.toLowerCase()}: ${headerValue}\n`;
-      }
-      return str;
-    }, '');
-  
-    const signingString = `(request-target): ${header.method.toLowerCase()} ${header.url}\n${signingStringHeaders.substr(0, (signingStringHeaders.length-1))}`;
-  
-    const signatureBuffer = Buffer.from(signatureValue, 'base64');
-    //const pubkeyBuffer = Buffer.from(publicKey, 'ascii');
-  
-    const verifier = crypto.createVerify(algorithm);
-    verifier.update(signingString);
-  
-    const verified = verifier.verify(publicKey, signatureBuffer);
-  
-    if (verified) {
-      console.log('Signature verified successfully');
-    } else {
-      console.log('Signature verification failed');
-    }
-  }
+const { verifySign, makeDigest } = require("./lib/verifySign")
 
 router.get('/:username', async function (req, res) {
     const aplog = await startAPLog(req)
@@ -299,15 +262,6 @@ router.get("/:username/inbox", async(req, res) => {
     res.sendStatus(404)
 })
 
-function makeDigest(object){
-    const input = JSON.stringify(object);
-
-    var crypto = require('crypto');
-    const hash = crypto.createHash('sha256').update(input).digest('base64');
-
-    return "SHA-256="+hash;
-}
-
 router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     const aplog = await startAPLog(req)
     const username = req.params.username || "!shared!";
@@ -318,19 +272,25 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
 
     console.log("POST", clc.blue("/inbox"), "to "+username+" ("+reqtype+") from "+req.body.actor)
 
+    /* VERIFY DIGEST */
     const digest = makeDigest(req.body);
-    if(digest==req.headers.digest){
-        console.log("MATCH")
-    }else{
-        console.log("FALSE")
+    if(digest!=req.headers.digest){
+        console.log("DIGEST DOESN'T MATCH")
+        res.sendStatus(401)
+        return;
     }
 
+    // VERIFY BY SIGNATURE
     const account = await knex("apaccounts").where("uri", "=", req.body.actor).select("pubkey").first();
     const publicKey = account.pubkey;
+    const verified = verifySign({ method: 'POST', url: req.originalUrl, ...req.headers}, req.body, publicKey);
+    console.log("V",verified)
+    if(!verified){
+        res.sendStatus(401)
+        return;
+    }
 
-    // VERIFY
-    verifySignature({ method: 'POST', url: req.originalUrl, ...req.headers}, req.body, publicKey);
-
+    // CHECK TO ADD ACTIVITY
     await addActivity(req.body)
     .then(async(proceed) => {
         if(proceed){
