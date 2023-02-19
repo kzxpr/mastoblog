@@ -120,11 +120,15 @@ async function makeObject(object, params, body){
     const startTime = body.startTime !== undefined ? body.startTime : "2023-12-31T23:00:00-08:00";
     const endTime = body.endTime !== undefined ? body.endTime : "2024-01-01T06:00:00-08:00";
     const inReplyTo = body.inReplyTo !== undefined ? body.inReplyTo : "";
-    const anyOf = body.anyOf !== undefined ? body.anyOf : "";
-    const oneOf = body.oneOf !== undefined ? body.oneOf : '[{"type": "Note","name": "Yes"},{"type": "Note","name": "No"}]';
+    //const anyOf = body.anyOf !== undefined ? body.anyOf : "";
+    //const oneOf = body.oneOf !== undefined ? body.oneOf : '[{"type": "Note","name": "Yes"},{"type": "Note","name": "No"}]';
+    const questiontype = body.questiontype !== undefined ? body.questiontype : "oneOf";
+    const n_options = body.n_options !== undefined ? body.n_options : 2;
     const closed = body.closed !== undefined ? body.closed : "";
+
     var href = new Array();
     var mediaType = new Array();
+    var options = new Array();
     if(body.href !== undefined){
         if(Array.isArray(body.href)){
             href = body.href;
@@ -132,6 +136,13 @@ async function makeObject(object, params, body){
         }else{
             href = new Array(body.href)
             mediaType = new Array(body.mediaType)
+        }
+    }
+    if(body.options !== undefined){
+        if(Array.isArray(body.options)){
+            options = body.options;
+        }else{
+            options = new Array(body.options)
         }
     }
     
@@ -238,16 +249,39 @@ async function makeObject(object, params, body){
         obj = makeEvent(username, domain, manual_guid, { published, name, content, to, cc, startTime, endTime, url, summary, public, followshare })
     }else if(object=="Question"){
         body += "<tr><td>content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
-        body += "<tr><td>anyOf</td><td><input type='text' name='anyOf' value='"+anyOf+"'></td></tr>"
-        body += "<trl><td>oneOf</td><td><input type='text' name='oneOf' value='"+oneOf+"'></td></tr>"
+        body += "<tr><td>question type</td><td><select name='questiontype'>";
+        const questiontypes = new Array("anyOf", "oneOf");
+        for(let t of questiontypes){
+            body += "<option value='"+t+"'";
+            if(t == questiontype){
+                body += " selected"
+            }
+            body += ">"+t+"</option>";
+        }
+        body += "</select></td></tr>"
+        body += "<tr><td>n_options</td><td><input type='number' name='n_options' value='"+n_options+"'></td></tr>"
+        if(n_options>0){
+            for(let n = 0; n < n_options; n++){
+                body += "<tr>"
+                body += "<td>option"+n+"</td>";
+                body += "<td><input type='text' name='options' value='"+(options[n] ? options[n] : "")+"'></td>";
+                body += "</tr>"
+            }
+        }
         body += "<tr><td>closed</td><td><input type='text' name='closed' value='"+closed+"'></td></tr>"
         body += "<tr><td>endTime</td><td><input type='text' name='endTime' value='"+endTime+"'></td></tr>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
-        hidden += "<input type='hidden' name='anyOf' value='"+anyOf+"'>";
-        hidden += "<input type='hidden' name='oneOf' value='"+oneOf+"'>";
+        hidden += "<input type='hidden' name='questiontype' value='"+questiontype+"'>";
+        hidden += "<input type='hidden' name='n_options' value='"+n_options+"'>";
+        //hidden += "<input type='hidden' name='options' value='"+options+"'>";
+        if(n_options>0){
+            for(let n = 0; n < n_options; n++){
+                hidden += "<input type='hidden' name='options' value='"+options[n]+"'>";
+            }
+        }
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         hidden += "<input type='hidden' name='closed' value='"+closed+"'>";
-        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, anyOf, oneOf, endTime, closed, public, followshare })
+        obj = makeQuestion(username, domain, manual_guid, { published, content, to, cc, questiontype, options, endTime, closed, public, followshare })
     }else{
         body += "<tr><td>Content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";

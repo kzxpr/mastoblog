@@ -37,11 +37,11 @@ console.log("Received digest: q7eOSxaPkrfpPvv3OQHD458bseC+ZpNHkeW/Gvv+gfw=")
 console.log("Calculated digest:", digest)
 
 /* NOW CHECK THE SIGNATURE */
-const algorithm = "SHA256";
-const key1 = "-----BEGIN PUBLIC KEY-----\n";
-const key2 = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1XJiq1YIpIbmpyh9nJjfqFTSrTfdLNe50B5bp7Uej1Dsl1fjzc1J834pCIfhicLKopWNHZKXjPnXKXBQeyxnaCH4xrO01v0kLYT31zpqDlNm6H7X4HtJJTGt/p1LorleZOHA3EAVIxvsViH1aJVHw43aXr4H1sE7lJCx729l/G1UbSWSRc0FNHa6EbGjeQQZ/OfWCycGLKvCYkcfZKl6qiIPJV6uE+N9fZiUdFieKsgtDExia3ZtXH/l/eHFrzlwfIxOrSDPiw6gMJOaBm6qRIBjtyelPUhnGpt26YZqmn7E/beTHNhNkzsfwxQB+ccPlxuJVqHUBGEE1Lj0hm3jGQIDAQAB";
-const key3 = "\n-----END PUBLIC KEY-----";
-const publicKey = key1 + key2 + key3;
+const algorithm = "RSA-SHA256";
+//const key1 = "-----BEGIN PUBLIC KEY-----\n";
+//const key2 = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1XJiq1YIpIbmpyh9nJjfqFTSrTfdLNe50B5bp7Uej1Dsl1fjzc1J834pCIfhicLKopWNHZKXjPnXKXBQeyxnaCH4xrO01v0kLYT31zpqDlNm6H7X4HtJJTGt/p1LorleZOHA3EAVIxvsViH1aJVHw43aXr4H1sE7lJCx729l/G1UbSWSRc0FNHa6EbGjeQQZ/OfWCycGLKvCYkcfZKl6qiIPJV6uE+N9fZiUdFieKsgtDExia3ZtXH/l/eHFrzlwfIxOrSDPiw6gMJOaBm6qRIBjtyelPUhnGpt26YZqmn7E/beTHNhNkzsfwxQB+ccPlxuJVqHUBGEE1Lj0hm3jGQIDAQAB";
+//const key3 = "\n-----END PUBLIC KEY-----";
+const publicKey = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1XJiq1YIpIbmpyh9nJjf\nqFTSrTfdLNe50B5bp7Uej1Dsl1fjzc1J834pCIfhicLKopWNHZKXjPnXKXBQeyxn\naCH4xrO01v0kLYT31zpqDlNm6H7X4HtJJTGt/p1LorleZOHA3EAVIxvsViH1aJVH\nw43aXr4H1sE7lJCx729l/G1UbSWSRc0FNHa6EbGjeQQZ/OfWCycGLKvCYkcfZKl6\nqiIPJV6uE+N9fZiUdFieKsgtDExia3ZtXH/l/eHFrzlwfIxOrSDPiw6gMJOaBm6q\nRIBjtyelPUhnGpt26YZqmn7E/beTHNhNkzsfwxQB+ccPlxuJVqHUBGEE1Lj0hm3j\nGQIDAQAB\n-----END PUBLIC KEY-----";//key1 + key2 + key3;
 
 const inbox = "/u/inbox";
 const host = header.host; //"dev2.hackademiet.dk"
@@ -70,3 +70,32 @@ const isVerified = verify.verify(publicKey, signature);
 console.log(isVerified);
 
 // 'SHA-256=q7eOSxaPkrfpPvv3OQHD458bseC+ZpNHkeW/Gvv+gfw='
+
+
+
+function verifySignature(header, body, publicKey) {
+  console.log(publicKey)
+  const { signature } = header;
+  const signingString = `(request-target): ${header['(request-target)']}\nhost: ${header.host}\ndate: ${header.date}\ndigest: ${header.digest}\ncontent-type: ${header['content-type']}`;
+  
+  const signatureParams = signature.split(',').reduce((params, param) => {
+    const [key, value] = param.split('=');
+    params[key.trim()] = value.replace(/"/g, '').trim();
+    return params;
+  }, {});
+  
+  const signatureBuffer = Buffer.from(signatureParams.signature, 'base64');
+  
+  const verifier = crypto.createVerify('RSA-SHA256');
+  verifier.update(signingString);
+  
+  const verified = verifier.verify(publicKey, signatureBuffer);
+  
+  if (verified) {
+    console.log('Signature verified successfully');
+  } else {
+    console.log('Signature verification failed');
+  }
+}
+
+verifySignature(header, body, publicKey);

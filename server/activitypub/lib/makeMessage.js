@@ -181,7 +181,7 @@ function makeEvent(username, domain, guid, params){
 }
 
 function makeQuestion(username, domain, guid, params){
-    const { anyOf, oneOf, content, published, url, closed, to, cc, public, followshare } = params;
+    const { questiontype, options, content, published, url, closed, to, cc, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -201,10 +201,30 @@ function makeQuestion(username, domain, guid, params){
     }
     if(closed){
         obj["closed"] = closed;
-    }else if(anyOf){
-        obj["anyOf"] = JSON.parse(anyOf);
-    }else if(oneOf){
-        obj["oneOf"] = JSON.parse(oneOf);
+    }
+    //const parsed_options = JSON.parse(options);
+
+    var parsed_options;
+    if(options && options != null){
+        var opts = options;
+        if(!Array.isArray(options)){
+            opts = new Array(options)
+        }
+        parsed_options = new Array();
+        for(let i = 0; i < opts.length; i++){
+            if(opts[i] !== undefined){
+                var o = {};
+                o.type = "Note";
+                o.name = opts[i];
+                parsed_options.push(o)
+            }
+        }
+    }
+
+    if(questiontype == "anyOf"){
+        obj["anyOf"] = parsed_options;
+    }else if(questiontype == "oneOf"){
+        obj["oneOf"] = parsed_options;
     }
 
     return obj;
