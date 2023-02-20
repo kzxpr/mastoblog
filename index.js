@@ -251,10 +251,6 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
         })
 });
 
-app.get("/sandbox", (req, res) => {
-    res.send("<img src='"+decodeImageFromBlurhash("UFCFL;}@I:sSrqr=oL$*Irt7xYRj$fxDofNH", 387, 258)+"'>");
-})
-
 app.listen(port, () => {
     console.log("Listen on the port "+port);
 });

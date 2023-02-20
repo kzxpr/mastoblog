@@ -24,7 +24,10 @@ async function encodeImageToBlurhash(imageUrl){
         if(imageUrl && imageUrl != "https://dev2.hackademiet.dk/public/"){
             await getImageData(imageUrl)
             .then((imageData) => {
-                resolve(encode(imageData.data, imageData.width, imageData.height, 4, 4))
+                const blurhash = encode(imageData.data, imageData.width, imageData.height, 4, 4);
+                const width = imageData.width;
+                const height = imageData.height;
+                resolve({ blurhash, width, height })
             })
             .catch((e) => {
                 reject(e)

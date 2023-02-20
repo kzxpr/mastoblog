@@ -75,15 +75,15 @@ async function makeNote(username, domain, guid, params){
                 a.mediaType = types[i];
                 a.url = urls[i];
                 a.name = "Untitled"
-                a.blurhash = await encodeImageToBlurhash(a.url)
-                .then((blurhash) => {
-                    return blurhash
+                await encodeImageToBlurhash(a.url)
+                .then((data) => {
+                    a.blurhash = data.blurhash;
+                    a.width = data.width;
+                    a.height = data.height;
                 })
                 .catch((e) => {
                     console.error("ERROR encoding blurhash", e)
                 })
-                a.width = 387;
-                a.height = 258;
                 attachments.push(a)
             }
             
@@ -232,15 +232,15 @@ async function makeQuestion(username, domain, guid, params){
                 a.mediaType = types[i];
                 a.url = urls[i];
                 a.name = "Untitled"
-                a.blurhash = await encodeImageToBlurhash(a.url)
-                .then((blurhash) => {
-                    return blurhash
+                await encodeImageToBlurhash(a.url)
+                .then((data) => {
+                    a.blurhash = data.blurhash;
+                    a.width = data.width;
+                    a.height = data.height;
                 })
                 .catch((e) => {
                     console.error("ERROR encoding blurhash", e)
                 })
-                a.width = 387;
-                a.height = 258;
                 attachments.push(a)
             }
             
@@ -288,15 +288,15 @@ async function makeImage(username, domain, guid, params){
                 a.mediaType = types[i];
                 a.url = urls[i];
                 a.name = "Untitled"
-                a.blurhash = await encodeImageToBlurhash(a.url)
-                .then((blurhash) => {
-                    return blurhash
+                await encodeImageToBlurhash(a.url)
+                .then((data) => {
+                    a.blurhash = data.blurhash;
+                    a.width = data.width;
+                    a.height = data.height;
                 })
                 .catch((e) => {
                     console.error("ERROR encoding blurhash", e)
                 })
-                a.width = 387;
-                a.height = 258;
                 attachments.push(a)
             }
             
