@@ -1,5 +1,3 @@
-const axios = require('axios');
-
 const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 

@@ -518,18 +518,25 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     }
     
     for(let recipient of recipients){
-        let inbox = await findInbox(recipient)
-        let recipient_url = new URL(recipient);
-        let targetDomain = recipient_url.hostname;
-        await signAndSend(wrapped, uri, targetDomain, inbox, apikey)
-            .then((data) => {
-                console.log("SEND NOTE RESPONSE",data)
-                body += "To: "+recipient+" = OK<br>";
-            })
-            .catch((err) => {
-                console.error(err)
-                body += "To: "+recipient+" = ERROR<br>";
-            })
+        await findInbox(recipient)
+        .then(async(inbox) => {
+            let recipient_url = new URL(recipient);
+            let targetDomain = recipient_url.hostname;
+            await signAndSend(wrapped, uri, targetDomain, inbox, apikey)
+                .then((data) => {
+                    console.log("SEND NOTE RESPONSE",data)
+                    body += "To: "+recipient+" = OK<br>";
+                })
+                .catch((err) => {
+                    console.error(err)
+                    body += "To: "+recipient+" = ERROR<br>";
+                })
+        })
+        .catch((e) => {
+            console.error("Could not findInbox for "+recipient, e)
+            body += "To: "+recipient+" = ERROR<br>";
+        })
+        
     }
 
     body += "<a href='"+tester_root+"'>BACK!</a>"

@@ -8,11 +8,7 @@ async function getWebfinger(address){
         axios
             .get(url)
             .then(res => {
-                //if(res.status==200){
-                    resolve(res.data);
-                /*}else{
-                    reject("Not resolved (statuscode: "+res.status+")")
-                }*/
+                resolve(res.data);
             })
             .catch(error => {
                 if(error.response){
@@ -44,17 +40,13 @@ async function getObjectItem(url, headers){
                 url
             })
                 .then(res => {
-                    //if(res.status==200){
                         resolve(res.data);
-                    /*}else{
-                        reject("getObjectItem not resolved (statuscode: "+res.status+")")
-                    }*/
                 })
                 .catch(error => {
                     if(error.response){
                         console.log("Received "+error.response.status)
                     }
-                    reject("Error with axios in /getObjectItem"+error)
+                    reject("Error with axios in /getObjectItem"+error.status)
                 });
         });
     }
