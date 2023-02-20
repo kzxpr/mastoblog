@@ -67,11 +67,9 @@ function asyncAuthorizer(username, password, cb) {
 }
 
 /* ACTIVITY PUB */
-//const ap_admin = require("./server/activitypub/admin")
 const ap_webfinger = require("./server/activitypub/webfinger")
 const ap_user = require("./server/activitypub/user")
 app.use("/ap/admin", cors({ credentials: true, origin: true }), basicUserAuth);
-//app.use("/ap/admin/api", ap_admin)
 app.use("/.well-known/webfinger/", cors(), ap_webfinger)
 app.use("/u", cors(), ap_user)
 
@@ -103,6 +101,7 @@ app.get("/ap/admin", (req, res) => {
     res.sendFile(path.join(__dirname, "server", "activitypub", "admin.html"))
 })
 
+/* STATICS */
 app.use('/public', express.static(__dirname + '/public'));
 
 /* HBS */
@@ -254,8 +253,6 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
 
 app.get("/sandbox", (req, res) => {
     res.send("<img src='"+decodeImageFromBlurhash("UFCFL;}@I:sSrqr=oL$*Irt7xYRj$fxDofNH", 387, 258)+"'>");
-    //a.width = ;
-    //a.height = ;
 })
 
 app.listen(port, () => {

@@ -298,7 +298,6 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     }
     
     const verified = verifySign({ method: 'POST', url: req.originalUrl, ...req.headers}, req.body, publicKey);
-    console.log("V",verified)
     if(!verified){
         res.sendStatus(401)
         return;
