@@ -11,7 +11,7 @@ const { loadFollowersByUri, loadFollowingByUri } = require("./lib/loadFollowersB
 const { makeMessage } = require("./lib/makeMessage");
 const { wrapInCreate } = require('./lib/wrappers');
 const { sendAcceptMessage } = require("./lib/sendAcceptMessage")
-const { sendLatestMessages } = require("./lib/sendLatestMessages")
+const { sendLatestMessages, addresseesToString } = require("./lib/sendLatestMessages")
 const { addFollower, removeFollower } = require("./lib/addFollower")
 const { lookupAccountByURI, removeAccount, updateAccount } = require("./lib/addAccount")
 const { addLike, removeLike } = require("./lib/addLike")
@@ -19,7 +19,8 @@ const { addAnnounce, removeAnnounce } = require("./lib/addAnnounce")
 const { startAPLog, endAPLog } = require("./lib/aplog");
 const { addMessage, removeMessage, updateMessage } = require('./lib/addMessage');
 const { addActivity } = require("./lib/addActivity")
-const { verifySign, makeDigest } = require("./lib/verifySign")
+const { verifySign, makeDigest } = require("./lib/verifySign");
+const { Message } = require('../models/db');
 
 router.get('/:username', async function (req, res) {
     const aplog = await startAPLog(req)
@@ -138,7 +139,7 @@ router.get("/:username/messages/:messageid", async(req, res) => {
             await endAPLog(aplog, e, 500)
             res.sendStatus(500)
         })
-        let m = makeMessage(username, domain, message.guid, message.publishedAt, message.content);
+        let m = await makeMessage(message.type, username, domain, message.guid, { published: message.publishedAt, content: message.content });
         const wrapped = wrapInCreate(m, username+"@"+domain, domain, [], message.guid)
         await endAPLog(aplog, wrapped)
         res.send(wrapped);
@@ -163,14 +164,17 @@ router.get(["/:username/outbox"], async(req, res) => {
             "first": "https://"+domain+"/u/"+username+"/outbox?page=true"
         })
     }else{*/
+    
         const user_uri = await knex("apaccounts").where("handle", "=", username+"@"+domain).select("uri").first()
             .then((d) => { return d.uri })
             .catch((e) => { res.sendStatus(500)})
-        const messages = await knex("apmessages").where("attributedTo", user_uri)
-        .then((messages) => {
+        const messages = await Message.query().where("attributedTo", user_uri)
+        .withGraphFetched("[addressees]")
+        .then(async(messages) => {
             var output = new Array();
             for(let message of messages){
-                output.push(makeMessage(username, domain, message.guid, message.publishedAt, message.content))
+                const { to, cc} = addresseesToString(message.addressees)
+                output.push(await makeMessage(message.type, username, domain, message.guid, { published: message.publishedAt, content: message.content, to, cc }))
             }
             return output;
         })
@@ -208,11 +212,13 @@ router.get(["/:username/collections/featured"], async(req, res) => {
     const user_uri = await knex("apaccounts").where("handle", "=", username+"@"+domain).select("uri").first()
         .then((d) => { return d.uri })
         .catch((e) => { res.sendStatus(500)})
-    const messages = await knex("apmessages").where("attributedTo", user_uri).andWhere("pinned", "=", 1)
-    .then((messages) => {
+    const messages = await Message.query().where("attributedTo", user_uri).andWhere("pinned", "=", 1)
+        .withGraphFetched("[addressees]")
+    .then(async(messages) => {
         var output = new Array();
         for(let message of messages){
-            output.push(makeMessage(user_uri, message.guid, { published: message.publishedAt, content: message.content }));
+            const { to, cc} = addresseesToString(message.addressees)
+            output.push(await makeMessage(message.type, username, domain, message.guid, { published: message.publishedAt, content: message.content, to, cc }));
         }
         return output;
     })
@@ -239,7 +245,7 @@ router.get("/:username/statuses/:messageid", async (req, res) => {
         .then(async (message) => {
             //console.log("M", uri, message)
             if(message){
-                const msg = makeMessage(uri, message.guid, {publishedAt: message.publishedAt, content: message.content});
+                const msg = await makeMessage(message.type, username, domain, message.guid, {published: message.publishedAt, content: message.content});
                 
                 /* IT SEEMS LIKE THIS SHOULD *NOT* BE WRAPPED */
 

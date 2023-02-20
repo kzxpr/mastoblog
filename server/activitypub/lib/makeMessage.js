@@ -1,31 +1,15 @@
 const { encodeImageToBlurhash } = require("./blurhash")
 
-function makeMessage(uri, guid, params){
-    const { published, content, url, cc, to, public, followshare, sensitive } = params;
-    var url_link;
-    if(!url){
-        url_link = uri+"/statuses/"+guid;
-        message_uri = uri+"/statuses"+guid;
-    }else{
-        url_link = url;
-        message_uri = url;
+async function makeMessage(type, username, domain, guid, params){
+    switch(type){
+        case 'Note': obj = await makeNote(username, domain, guid, params); break;
+        case 'Event': obj = await makeEvent(username, domain, guid, params); break;
+        case 'Question': obj = await makeQuestion(username, domain, guid, params); break;
+        case 'Image': obj = await makeImage(username, domain, guid, params); break;
+        case 'Article': obj = await makeArticle(username, domain, guid, params); break;
+        case 'Page': obj = await makePage(username, domain, guid, params); break;
     }
-    //const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain });
-    return {
-        "@context": ["https://www.w3.org/ns/activitystreams"],
-        "id": message_uri,
-        "type": "Note",
-        "published": published,
-        "attributedTo": uri,
-        "to": to,
-        "cc": cc,
-        "sensitive": sensitive,
-        "url": url_link,
-        "content": content,
-        "contentMap": {
-            "en": content
-        }
-    }
+    return obj;
 }
 
 function handleAddress(params){
@@ -187,7 +171,6 @@ async function makeEvent(username, domain, guid, params){
 
 async function makeQuestion(username, domain, guid, params){
     const { questiontype, options, content, sensitive, published, url, closed, to, cc, public, followshare, mediaType, href, n_attachs } = params;
-    console.log("HEJ", n_attachs, href, mediaType)
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -264,8 +247,6 @@ async function makeQuestion(username, domain, guid, params){
         }
         obj["attachment"] = attachments;
     }
-
-    console.log("FIN", obj)
 
     return obj;
 }
