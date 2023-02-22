@@ -233,36 +233,49 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
     var pagetitle="";
 
     var posts;
-    /*if(postid!==null){
-        posts = await Post.query().where("id", "=", postid).andWhere("hidden", "=", 0).orderBy("createdAt", "desc").withGraphFetched("tags.^1")
-        pagetitle = posts[0].title;
+    if(postid!==null){
+        posts = await Message.query().where("guid", "=", postid)
+            .orderBy("createdAt", "desc")
+            .withGraphFetched("[creator, attachments, tags, replies.creator, likes.sender, announces.sender, options]")
+        if(posts[0].summary){
+            pagetitle = posts[0].summary;
+        }else{
+            if(posts[0].content.length>100){
+                pagetitle = posts[0].content.substr(0, 97) + "...";
+            }else{
+                pagetitle = posts[0].content;
+            }
+        }
+        
     }else if(tagname!==null){
-        posts = await Tag.query().where("url_friendly", "=", tagname).withGraphFetched("posts.tags.^1").first().then(async(tag) => {
-            return tag.posts;
+        posts = await Tag.query().where("name", "=", "#"+tagname).andWhere("type", "=", "Hashtag")
+        
+        .withGraphFetched("messages.[creator, attachments, tags, replies.creator, likes.sender, announces.sender, options]").first().then(async(tag) => {
+            return tag.messages;
         })
     }else{
-        posts = await Post.query().where("hidden", "=", 0).orderBy("createdAt", "desc").offset(pageno*postprpage).limit(postprpage).withGraphFetched("tags.^1")
-    }*/
+        posts = await Message.query().where("attributedTo", "=", user_uri)
+        //.andWhere("public", "=", 1)
+        .orderBy("publishedAt", "desc")
+        .offset(pageno*postprpage).limit(postprpage)
+        .withGraphFetched("[creator, attachments, tags, replies.creator, likes.sender, announces.sender, options]")
+    }
 
     const account = await Account.query().where("uri", "=", user_uri).first()
         .withGraphFetched("[followers, following]")
-
-    posts = await Message.query().where("attributedTo", "=", user_uri)
-        //.andWhere("public", "=", 1)
-        .orderBy("publishedAt", "desc")
-        .withGraphFetched("[creator, attachments, tags, replies.creator, likes.sender, announces.sender, options]")
 
     var hashtags = new Array();
     for(let post of posts){
         for(let tag of post.tags){
             if(tag.type == "Hashtag"){
                 var t = {};
-                hashtags.push({ name: tag.name.substr(1) })
+                t.name = tag.name.substr(1);
+                t.url_friendly = tag.name.substr(1).toLowerCase();
+                hashtags.push(t)
             }
         }
     }
 
-    console.log("H", hashtags)
     const tags = hashtags.filter(onlyUnique);
 
     const siteinfo = await getSiteInfo();
@@ -274,10 +287,10 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
             ...siteinfo,
             pagetitle,
             account,
-        //    tagname: tagname,
+            tagname: tagname,
             tags,
             posts,
-        //    nextpage
+            nextpage
         })
 });
 

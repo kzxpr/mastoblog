@@ -285,12 +285,12 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     //console.log(body_without_signature)
     const digest = makeDigest(req.body);
     if(digest!=req.headers.digest){
-        console.log("DIGEST DOESN'T MATCH", digest, req.headers)
+        console.log("DIGEST DOESN'T MATCH");//, digest, req.headers)
         /*await endAPLog(aplog, "Digest invalid", 401)
         res.sendStatus(401)
         return;*/
     }else{
-        console.log("VALID DIGEST", digest, req.headers, JSON.stringify(req.body))
+        console.log("VALID DIGEST");//, digest, req.headers, JSON.stringify(req.body))
     }
 
     // VERIFY BY SIGNATURE

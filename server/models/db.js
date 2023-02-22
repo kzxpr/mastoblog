@@ -15,6 +15,19 @@ class Tag extends Model {
 	static get tableName() {
 		return 'aptags';
 	}
+
+	static get relationMappings() {
+		return {
+			messages: {
+				relation: Model.HasManyRelation,
+				modelClass: Message,
+				join: {
+					from: 'aptags.message_uri',
+					to: 'apmessages.uri'
+				}
+			}
+		}
+	}
 }
 
 class Like extends Model {

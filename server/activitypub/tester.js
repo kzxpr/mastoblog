@@ -334,7 +334,7 @@ async function makeObject(object, params, body){
     }
     
     const manual_guid = body.manual_guid != "" ? body.manual_guid : guid;
-    const url = body.url !== undefined ? body.url : "https://"+domain+"/u/"+username+"/message/"+manual_guid;
+    const url = body.url !== undefined ? body.url : "https://"+domain+"/post/"+manual_guid;
     const public = ((body.public !== undefined) && (body.public != "false"))
         ? true : false;
     const followshare = ((body.followshare !== undefined) && (body.followshare != "false"))
