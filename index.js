@@ -3,6 +3,12 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 3011;
 
+function onlyUnique(value, index, array) {
+    // HOW TO USE:
+    // var unique = a.filter(onlyUnique);
+    return array.indexOf(value) === index;
+}
+
 /* KNEX */
 const { Tag, Account, Message } = require("./server/models/db")
 const db = require("./knexfile")
@@ -208,6 +214,8 @@ app.get(["/what"], async (req, res) => {
 })
 
 app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/:tagname", "/tag/:tagname/page/:pageno", "/tag/:tagname/post/:postid"], async (req, res) => {
+    const user_uri = await getConfigByKey("user_url");
+
     var postid=null;
     var tagname=null;
     var pageno=0;
@@ -236,18 +244,32 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
         posts = await Post.query().where("hidden", "=", 0).orderBy("createdAt", "desc").offset(pageno*postprpage).limit(postprpage).withGraphFetched("tags.^1")
     }*/
 
+    const account = await Account.query().where("uri", "=", user_uri).first()
+        .withGraphFetched("[followers, following]")
+
+    posts = await Message.query().where("attributedTo", "=", user_uri)
+        .withGraphFetched("[creator, attachments, tags, replies, likes.sender, announces, options]")
+
+    const hashtags = posts.map((v) => {
+        if(v.type == "Hashtag"){
+            return v.name;
+        }
+    })
+    const tags = hashtags.filter(onlyUnique);
+
     const siteinfo = await getSiteInfo();
 
-    const tags = await Tag.query().orderBy("name", "asc")
+    //const tags = await Tag.query().orderBy("name", "asc")
 
     res.render("blog",
         {
             ...siteinfo,
             pagetitle,
-            tagname: tagname,
-            tags,
+            account,
+        //    tagname: tagname,
+        //    tags,
             posts,
-            nextpage
+        //    nextpage
         })
 });
 

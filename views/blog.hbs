@@ -12,7 +12,7 @@
         <div></div>
             <b>Followers:</b>
             <div class="followers--box">
-            {{#each followers}}
+            {{#each account.followers}}
                 {{#if (notempty this.icon)}}
                     <div class="followers--icon">
                         <a href="{{this.homepage}}" target="_new">
@@ -35,8 +35,28 @@
         {{#if (gt (count posts) 0)}}
             {{#each posts}}
                 <section class="post--wrap">
-                    <div class="post--header">{{this.title}}</div>
-                    <div class="post--body">{{{this.body}}}</div>
+                    <div class="post--header">{{this.summary}}</div>
+                    <div class="post--body">
+                        {{{this.content}}}
+                        {{#if this.attachments}}
+                            <div>
+                                {{#each this.attachments}}
+                                    <img src="{{this.url}}" style="width: 100%" />
+                                {{/each}}
+                            </div>
+                        {{/if}}
+                    </div>
+                    <div>
+                        {{#if this.likes}}
+                            <div>
+                                <ul>
+                                    {{#each this.likes}}
+                                        <li>{{this.sender}}</li>
+                                    {{/each}}
+                                </ul>
+                            </div>
+                        {{/if}}
+                    </div>
                     <div class="post--footer">
                         <div class="post--tags">
                             <ul class="post--tags--list">

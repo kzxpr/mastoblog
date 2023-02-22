@@ -147,6 +147,7 @@ router.get("/:username", (req, res) => {
     body += "Additional stuff"
     body += "<ul>"
     body += "<li><a href='"+tester_root+"/"+username+"/edit/account'>Update account</a></li>"
+    body += "<li><a href='"+tester_root+"/"+username+"/edit/messages'>Update messages</a></li>"
     body += "</ul>"
     res.send(body)
 })
@@ -196,6 +197,57 @@ router.route("/:username/edit/account")
             console.error("ERROR looking up account")
             res.send("Error looking up account")
         })
+})
+
+router.route("/:username/edit/messages")
+    /*.post(async (req, res, next) => {
+        const domain = req.app.get('domain');
+        const { username } = req.params;
+        const account_uri = "https://"+domain+"/u/"+username;
+        if(req.body){
+            // THIS IS POST
+            const { displayname, summary, icon } = req.body;
+            const upd = await knex("apaccounts").update({ displayname, summary, icon }).where("uri", "=", account_uri)
+            .then((d) => {
+                res.locals.msg = "SUCCESS - <a href='"+tester_root+"/"+username+"/Update/Id'>send notification!</a>"
+            })
+            .catch((e) => {
+                res.locals.msg = "ERROR updating profile"
+                console.error("ERROR updating profile", e)
+            })
+        }
+        next();
+    })*/
+    .all(async(req, res) => {
+        const domain = req.app.get('domain');
+        const { username } = req.params;
+        const account_uri = "https://"+domain+"/u/"+username;
+
+        var body = header();
+        body += "Hi "+username+".<br>";
+        if (res.locals.msg){
+            body += "<div style='border: 1px solid #000; padding: 10px; margin: 10px'>"+res.locals.msg+"</div>"
+        }
+
+        body += "<table>"
+        body += "<tr><td></tr>"
+        await knex("apmessages").where("attributedTo", "=", account_uri)
+        .orderBy("publishedAt", "desc")
+        .then((messages) => {  
+            for(let message of messages){
+                body += "<tr>";
+                body += "<td>"+message.guid+"<td>"+message.uri+"<td>"+message.content+"<td>"+message.publishedAt;
+                body += "<td><a href='"+tester_root+"/"+username+"/Delete/Id?guid="+message.uri+"'>Delete</a>"
+                body += "</tr>";
+            }
+            //body += "<input type='submit' value='Update'>";
+        })
+        .catch((e) => {
+            console.error("ERROR looking up account")
+            body += "No messages found!"
+        })
+        body += "</table>"
+        res.send(body)
 })
 
 router.get("/:username/:activity", (req, res) => {
@@ -399,7 +451,13 @@ router.all("/:username/:activity/:object", async (req, res) => {
     const { username, activity, object } = req.params;
     const domain = req.app.get('domain');
     
-    const guid = "";
+    var guid = "";
+    if(req.query.guid){
+        //guid = req.query.guid;
+        //console.log(guid)
+        //req.body.manual_guid = guid;
+        req.body.stringobj = req.query.guid;
+    }
     const dd = new Date();
     const published = dd.toISOString();
 
@@ -487,7 +545,7 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     var recipients = new Array();
     for(let r of recipient_list){
         if(r == uri+"/followers"){
-            recipients.concat(await knex("apfollowers").where("username", "=", uri).select("follower")
+            const followers = await knex("apfollowers").where("username", "=", uri).select("follower")
                 .then((users) => {
                     return users.map((user) => {
                         return user.follower;
@@ -496,7 +554,7 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
                 .catch((e) => {
                     console.error("ERROR while getting followers", uri)
                 })
-            );
+            recipients = recipients.concat(followers);
         }else if(r != "" && r != "https://www.w3.org/ns/activitystreams#Public"){
             recipients.push(r)
         }

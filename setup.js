@@ -49,6 +49,8 @@ async function main(){
             })
     }
 
+    // EXAMPLE OF EMBEDDED MIGRATIONS: https://spin.atomicobject.com/2018/01/06/database-migration-aws-lambda/
+
     process.exit(0)
 }
 
