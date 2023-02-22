@@ -70,6 +70,26 @@ function addAttachments(options){
     return { body, hidden };
 }
 
+function addTags(options){
+    const { tags, n_tags } = options;
+    var body = "<tr><td colspan='3'><u>Tags:</u><td></tr>";
+    body += "<tr><td>number of tags</td><td><input type='number' name='n_tags' value='"+n_tags+"'></td></tr>"
+    var hidden = "<input type='hidden' name='n_tags' value='"+n_tags+"'>";
+    if(n_tags>0){
+        for(let n = 0; n < n_tags; n++){
+            body += "<tr>"
+            body += "<td>tag"+n+"</td>";
+            body += "<td><input type='text' name='tags' value='"+(tags[n] ? tags[n] : "")+"'></td>";
+            body += "</td>"
+            body += "</tr>"
+
+            hidden += "<input type='hidden' name='tags' value='"+tags[n]+"'>";
+        }
+    }
+
+    return { body, hidden };
+}
+
 function header(){
     var body = "<h1>Let's test ActivityPub</h1>"
     body += "LIKE (= favourite): Like > Id > Message as 'id' + author in 'to'<br>"
@@ -288,6 +308,7 @@ async function makeObject(object, params, body){
     var href = new Array();
     var mediaType = new Array();
     var options = new Array();
+    var tags = new Array();
     if(body.href !== undefined){
         if(Array.isArray(body.href)){
             href = body.href;
@@ -304,6 +325,13 @@ async function makeObject(object, params, body){
             options = new Array(body.options)
         }
     }
+    if(body.tags !== undefined){
+        if(Array.isArray(body.tags)){
+            tags = body.tags;
+        }else{
+            tags = new Array(body.tags)
+        }
+    }
     
     const manual_guid = body.manual_guid != "" ? body.manual_guid : guid;
     const url = body.url !== undefined ? body.url : "https://"+domain+"/u/"+username+"/message/"+manual_guid;
@@ -312,6 +340,7 @@ async function makeObject(object, params, body){
     const followshare = ((body.followshare !== undefined) && (body.followshare != "false"))
         ? true : false;
     const n_attachs = body.n_attachs !== undefined ? body.n_attachs : 0;
+    const n_tags = body.n_tags !== undefined ? body.n_tags : 0;
     var body = "";
     var hidden = "";
     var obj;
@@ -359,17 +388,18 @@ async function makeObject(object, params, body){
         const content_field = addContent({content})
         const summary_field = addSummary({summary})
         const attachment_field = addAttachments({ mediaType, href, n_attachs });
+        const tags_field = addTags({ tags, n_tags })
 
-        body += content_field.body + summary_field.body + attachment_field.body;
-        hidden += content_field.hidden + summary_field.hidden + attachment_field.hidden;
+        body += content_field.body + summary_field.body + attachment_field.body + tags_field.body;
+        hidden += content_field.hidden + summary_field.hidden + attachment_field.hidden + tags_field.hidden;
 
-        obj = await makeNote(username, domain, manual_guid, { published, name, n_attachs, href, mediaType, content, to, cc, sensitive, url, summary, inReplyTo, public, followshare })
+        obj = await makeNote(username, domain, manual_guid, { published, name, n_attachs, href, mediaType, tags, content, to, cc, sensitive, url, summary, inReplyTo, public, followshare })
     }else if(object=="Image"){
         const name_field = addName({name})
         const attachment_field = addAttachments({ mediaType, href, n_attachs });
         body += name_field.body + attachment_field.body;
         hidden += name_field.hidden + attachment_field.hidden;
-        obj = await makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, sensitive, public, followshare, href, mediaType, n_attachs })
+        obj = await makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, sensitive, public, followshare, href, n_attachs })
     }else if(object=="Event"){
         const name_field = addName({name})
         const attachment_field = addAttachments({ mediaType, href, n_attachs });
@@ -560,7 +590,7 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
         }
     }
 
-    console.log("RECIPIENTS", recipients)
+    //console.log("RECIPIENTS", recipients)
     //console.log("A", activity)
 
     /* ADD ACTIVITY TO DATABASE */

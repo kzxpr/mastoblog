@@ -248,13 +248,21 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
         .withGraphFetched("[followers, following]")
 
     posts = await Message.query().where("attributedTo", "=", user_uri)
-        .withGraphFetched("[creator, attachments, tags, replies, likes.sender, announces, options]")
+        //.andWhere("public", "=", 1)
+        .orderBy("publishedAt", "desc")
+        .withGraphFetched("[creator, attachments, tags, replies.creator, likes.sender, announces.sender, options]")
 
-    const hashtags = posts.map((v) => {
-        if(v.type == "Hashtag"){
-            return v.name;
+    var hashtags = new Array();
+    for(let post of posts){
+        for(let tag of post.tags){
+            if(tag.type == "Hashtag"){
+                var t = {};
+                hashtags.push({ name: tag.name.substr(1) })
+            }
         }
-    })
+    }
+
+    console.log("H", hashtags)
     const tags = hashtags.filter(onlyUnique);
 
     const siteinfo = await getSiteInfo();
@@ -267,7 +275,7 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
             pagetitle,
             account,
         //    tagname: tagname,
-        //    tags,
+            tags,
             posts,
         //    nextpage
         })

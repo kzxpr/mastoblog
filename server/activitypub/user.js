@@ -279,11 +279,18 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     console.log("POST", clc.blue("/inbox"), "to "+username+" ("+reqtype+") from "+req.body.actor)
 
     /* VERIFY DIGEST */
+    //const body_without_signature = req.body;
+    //delete body_without_signature.signature;
+    //delete body_without_signature.object.replies;
+    //console.log(body_without_signature)
     const digest = makeDigest(req.body);
     if(digest!=req.headers.digest){
-        console.log("DIGEST DOESN'T MATCH")
+        console.log("DIGEST DOESN'T MATCH", digest, req.headers)
+        /*await endAPLog(aplog, "Digest invalid", 401)
         res.sendStatus(401)
-        return;
+        return;*/
+    }else{
+        console.log("VALID DIGEST", digest, req.headers, JSON.stringify(req.body))
     }
 
     // VERIFY BY SIGNATURE
@@ -293,12 +300,14 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
         publicKey = account.pubkey;
     }else{
         console.log("Account not found!!!!!!!")
+        await endAPLog(aplog, "Account not found in DB", 404)
         res.sendStatus(404)
         return;
     }
     
     const verified = verifySign({ method: 'POST', url: req.originalUrl, ...req.headers}, req.body, publicKey);
     if(!verified){
+        await endAPLog(aplog, "Signature invalid", 401)
         res.sendStatus(401)
         return;
     }

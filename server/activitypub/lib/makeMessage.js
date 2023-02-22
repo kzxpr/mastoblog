@@ -36,7 +36,7 @@ function handleAddress(params){
 }
 
 async function makeNote(username, domain, guid, params){
-    const { published, name, content, sensitive, to, cc, url, n_attachs, href, mediaType, summary, inReplyTo, public, followshare } = params;
+    const { published, name, content, sensitive, to, cc, url, n_attachs, href, mediaType, summary, inReplyTo, public, followshare, tags } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -60,6 +60,20 @@ async function makeNote(username, domain, guid, params){
     obj["summary"] = summary;
     obj["content"] = content;
     obj["contentMap"] = { "en": summary };
+    console.log("T", tags)
+    if(tags && tags != null){
+        var tag_list = new Array();
+        for(let i = 0; i < tags.length; i++){
+            if(tags[i] !== undefined){
+                var t = {};
+                t.type = "Hashtag";
+                t.href = "https://"+domain+"/tag/"+tags[i];
+                t.name = "#"+tags[i]
+                tag_list.push(t)
+            }
+        }
+        obj["tag"] = tag_list;
+    }
     if(href && href != null){
         var urls = href;
         var types = mediaType;

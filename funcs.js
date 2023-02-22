@@ -60,4 +60,16 @@ function setVar(varName, varValue, options) {
     options.data.root[varName] = varValue;
 }
 
-module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero, prettyJSON, notnull, notempty, parseJSON, setVar }
+function substr(str, from, len = 0){
+    if(str){
+        if(len!=0){
+            return str.substr(from, len);
+        }else{
+            return str.substr(from)
+        }
+    }else{
+        return "";
+    }
+}
+
+module.exports = { sum, neq, eq, prettydatetime, gt, lt, count, fillWithZero, prettyJSON, notnull, notempty, parseJSON, setVar, substr }
