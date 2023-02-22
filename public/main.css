@@ -86,7 +86,7 @@ h2{
 .taglist{
     list-style: "#";
     margin: 0px;
-    padding: 20px 20px;
+    padding: 5px 0px 20px 20px;
 }
 .taglist--item > a{
     color: #777;

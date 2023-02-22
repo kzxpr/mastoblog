@@ -30,9 +30,6 @@ var bodyParser = require('body-parser')
 app.use(bodyParser.json({type: 'application/activity+json'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-/* BLUR */
-const { decodeImageFromBlurhash } = require("./server/activitypub/lib/blurhash")
-
 /* ALIVE TEST */
 app.get("/alive", (req, res) => {
     console.log("TRIGGER")
@@ -160,7 +157,7 @@ const { checkFeed } = require("./server/activitypub/lib/checkFeed")
 
 app.get("/checkfeed", checkFeed)
 
-app.get("/tjek", async(req, res) => {
+/*app.get("/tjek", async(req, res) => {
     const str = "ch 🍑 N ▇ I S B ▇ B";
     const encstr = encodeStr(str)
     console.log(encstr)
@@ -172,7 +169,7 @@ app.get("/tjek", async(req, res) => {
         console.error(e)
     })
     res.send("OK")
-})
+})*/
 
 app.get("/feed", async (req, res) => {
     const siteinfo = await getSiteInfo();
@@ -235,16 +232,25 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
     var posts;
     if(postid!==null){
         posts = await Message.query().where("guid", "=", postid)
+            //.andWhere("public", "=", 1)
             .orderBy("createdAt", "desc")
             .withGraphFetched("[creator, attachments, tags, replies.creator, likes.sender, announces.sender, options]")
-        if(posts[0].summary){
-            pagetitle = posts[0].summary;
-        }else{
-            if(posts[0].content.length>100){
-                pagetitle = posts[0].content.substr(0, 97) + "...";
+        if(posts[0]){
+            if(posts[0].summary){
+                pagetitle = posts[0].summary;
+            }else if(posts[0].name){
+                pagetitle = posts[0].name;
             }else{
-                pagetitle = posts[0].content;
+                if(posts[0].content){
+                    if(posts[0].content.length>100){
+                        pagetitle = posts[0].content.substr(0, 97) + "...";
+                    }else{
+                        pagetitle = posts[0].content;
+                    }
+                }
             }
+        }else{
+            // 404
         }
         
     }else if(tagname!==null){
@@ -265,22 +271,26 @@ app.get(["/", "/page", "/post", "/tag", "/page/:pageno", "/post/:postid", "/tag/
         .withGraphFetched("[followers, following]")
 
     var hashtags = new Array();
-    for(let post of posts){
-        for(let tag of post.tags){
-            if(tag.type == "Hashtag"){
-                var t = {};
-                t.name = tag.name.substr(1);
-                t.url_friendly = tag.name.substr(1).toLowerCase();
-                hashtags.push(t)
+    await Message.query().where("attributedTo", "=", user_uri)
+        //.andWhere("public", "=", 1)
+        .withGraphFetched("tags")
+        .then((all_posts) => {
+            for(let post of all_posts){
+                for(let tag of post.tags){
+                    if(tag.type == "Hashtag"){
+                        var t = {};
+                        t.name = tag.name.substr(1);
+                        t.url_friendly = tag.name.substr(1).toLowerCase();
+                        hashtags.push(t)
+                    }
+                }
             }
-        }
-    }
+        })
+    
 
     const tags = hashtags.filter(onlyUnique);
 
     const siteinfo = await getSiteInfo();
-
-    //const tags = await Tag.query().orderBy("name", "asc")
 
     res.render("blog",
         {

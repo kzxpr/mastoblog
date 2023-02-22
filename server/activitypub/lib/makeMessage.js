@@ -60,7 +60,7 @@ async function makeNote(username, domain, guid, params){
     obj["summary"] = summary;
     obj["content"] = content;
     obj["contentMap"] = { "en": summary };
-    console.log("T", tags)
+
     if(tags && tags != null){
         var tag_list = new Array();
         for(let i = 0; i < tags.length; i++){
@@ -108,7 +108,7 @@ async function makeNote(username, domain, guid, params){
 }
 
 function makeArticle(username, domain, guid, params){
-    const { published, content, name, url, to, cc, public, followshare, sensitive } = params;
+    const { published, content, name, url, to, cc, public, followshare, sensitive, tags } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -116,6 +116,18 @@ function makeArticle(username, domain, guid, params){
         url_link = url;
     }
     const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain });
+    if(tags && tags != null){
+        var tag_list = new Array();
+        for(let i = 0; i < tags.length; i++){
+            if(tags[i] !== undefined){
+                var t = {};
+                t.type = "Hashtag";
+                t.href = "https://"+domain+"/tag/"+tags[i];
+                t.name = "#"+tags[i]
+                tag_list.push(t)
+            }
+        }
+    }
     return {
         "@context": ["https://www.w3.org/ns/activitystreams"],
         "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
@@ -127,6 +139,7 @@ function makeArticle(username, domain, guid, params){
         "sensitive": sensitive,
         "url": url_link,
         "name": name,
+        "tag": tag_list,
         "content": content,
         "contentMap": {
             "en": content
@@ -135,7 +148,7 @@ function makeArticle(username, domain, guid, params){
 }
 
 function makePage(username, domain, guid, params){
-    const { published, content, url, public, followshare, sensitive, to, cc } = params;
+    const { published, content, url, public, followshare, tags, sensitive, to, cc } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -143,6 +156,19 @@ function makePage(username, domain, guid, params){
         url_link = url;
     }
     const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain });
+    if(tags && tags != null){
+        var tag_list = new Array();
+        for(let i = 0; i < tags.length; i++){
+            if(tags[i] !== undefined){
+                var t = {};
+                t.type = "Hashtag";
+                t.href = "https://"+domain+"/tag/"+tags[i];
+                t.name = "#"+tags[i]
+                tag_list.push(t)
+            }
+        }
+        //obj["tag"] = tag_list;
+    }
     return {
         "@context": ["https://www.w3.org/ns/activitystreams"],
         "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
@@ -151,6 +177,7 @@ function makePage(username, domain, guid, params){
         "attributedTo": "https://"+domain+"/u/"+username,
         "to": to_field,
         "cc": cc_field,
+        "tag": tag_list,
         "sensitive": sensitive,
         "url": url_link,
         "content": content,
@@ -158,7 +185,7 @@ function makePage(username, domain, guid, params){
 }
 
 async function makeEvent(username, domain, guid, params){
-    const { startTime, endTime, name, published, url, summary, to, cc, sensitive, public, followshare } = params;
+    const { startTime, endTime, name, published, url, summary, tags, to, cc, sensitive, public, followshare } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -166,6 +193,19 @@ async function makeEvent(username, domain, guid, params){
         url_link = url;
     }
     const { to_field, cc_field } = handleAddress({ to, cc, public, followshare, username, domain });
+    if(tags && tags != null){
+        var tag_list = new Array();
+        for(let i = 0; i < tags.length; i++){
+            if(tags[i] !== undefined){
+                var t = {};
+                t.type = "Hashtag";
+                t.href = "https://"+domain+"/tag/"+tags[i];
+                t.name = "#"+tags[i]
+                tag_list.push(t)
+            }
+        }
+        //obj["tag"] = tag_list;
+    }
     return {
         "@context": ["https://www.w3.org/ns/activitystreams"],
         "id": "https://"+domain+"/u/"+username+"/statuses/"+guid,
@@ -177,6 +217,7 @@ async function makeEvent(username, domain, guid, params){
         "to": to_field,
         "cc": cc_field,
         "sensitive": sensitive,
+        "tag": tag_list,
         "url": url_link,
         "name": name,
         "summary": summary
@@ -184,7 +225,7 @@ async function makeEvent(username, domain, guid, params){
 }
 
 async function makeQuestion(username, domain, guid, params){
-    const { questiontype, options, content, sensitive, published, url, closed, to, cc, public, followshare, mediaType, href, n_attachs } = params;
+    const { questiontype, options, content, sensitive, published, url, tags, closed, to, cc, public, followshare, mediaType, href, n_attachs } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -262,11 +303,25 @@ async function makeQuestion(username, domain, guid, params){
         obj["attachment"] = attachments;
     }
 
+    if(tags && tags != null){
+        var tag_list = new Array();
+        for(let i = 0; i < tags.length; i++){
+            if(tags[i] !== undefined){
+                var t = {};
+                t.type = "Hashtag";
+                t.href = "https://"+domain+"/tag/"+tags[i];
+                t.name = "#"+tags[i]
+                tag_list.push(t)
+            }
+        }
+        obj["tag"] = tag_list;
+    }
+
     return obj;
 }
 
 async function makeImage(username, domain, guid, params){
-    const { name, href, to, cc, mediaType, inReplyTo, sensitive, url, public, followshare, n_attachs } = params;
+    const { name, href, to, cc, tags, mediaType, inReplyTo, sensitive, url, public, followshare, n_attachs } = params;
     var url_link;
     if(!url){
         url_link = "https://"+domain+"/u/"+username+"/statuses/"+guid;
@@ -316,6 +371,20 @@ async function makeImage(username, domain, guid, params){
             
         }
         obj["attachment"] = attachments;
+    }
+
+    if(tags && tags != null){
+        var tag_list = new Array();
+        for(let i = 0; i < tags.length; i++){
+            if(tags[i] !== undefined){
+                var t = {};
+                t.type = "Hashtag";
+                t.href = "https://"+domain+"/tag/"+tags[i];
+                t.name = "#"+tags[i]
+                tag_list.push(t)
+            }
+        }
+        obj["tag"] = tag_list;
     }
 
     return obj;

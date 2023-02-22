@@ -397,14 +397,17 @@ async function makeObject(object, params, body){
     }else if(object=="Image"){
         const name_field = addName({name})
         const attachment_field = addAttachments({ mediaType, href, n_attachs });
-        body += name_field.body + attachment_field.body;
-        hidden += name_field.hidden + attachment_field.hidden;
-        obj = await makeImage(username, domain, manual_guid, { name, to, cc, href, mediaType, inReplyTo, sensitive, public, followshare, href, n_attachs })
+        const tags_field = addTags({ tags, n_tags })
+
+        body += name_field.body + attachment_field.body + tags_field.body;
+        hidden += name_field.hidden + attachment_field.hidden + tags_field.hidden;
+        obj = await makeImage(username, domain, manual_guid, { name, to, cc, tags, href, mediaType, inReplyTo, sensitive, public, followshare, href, n_attachs })
     }else if(object=="Event"){
         const name_field = addName({name})
         const attachment_field = addAttachments({ mediaType, href, n_attachs });
-        body += name_field.body + attachment_field.body;
-        hidden += name_field.hidden + attachment_field.hidden;
+        const tags_field = addTags({ tags, n_tags })
+        body += name_field.body + attachment_field.body + tags_field.body;
+        hidden += name_field.hidden + attachment_field.hidden + tags_field.hidden;
         body += "<tr><td>summary</td><td><input type='text' name='summary' value='"+summary+"'></td></tr>"
         body += "<tr><td>startTime</td><td><input type='text' name='startTime' value='"+startTime+"'></td></tr>"
         body += "<tr><td>endTime</td><td><input type='text' name='endTime' value='"+endTime+"'></td></tr>"
@@ -412,10 +415,11 @@ async function makeObject(object, params, body){
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         //hidden += "<input type='hidden' name='content' value='"+content+"'>";
         hidden += "<input type='hidden' name='summary' value='"+summary+"'>";
-        obj = await makeEvent(username, domain, manual_guid, { published, name, content, to, cc, sensitive, startTime, endTime, url, summary, public, followshare, mediaType, href, n_attachs })
+        obj = await makeEvent(username, domain, manual_guid, { published, name, content, tags, to, cc, sensitive, startTime, endTime, url, summary, public, followshare, mediaType, href, n_attachs })
     }else if(object=="Question"){
         const content_field = addContent({content})
         const attachment_field = addAttachments({ mediaType, href, n_attachs });
+        const tags_field = addTags({ tags, n_tags })
         body += content_field.body;
         hidden += content_field.hidden;
         body += "<tr><td>question type</td><td><select name='questiontype'>";
@@ -448,14 +452,17 @@ async function makeObject(object, params, body){
         }
         hidden += "<input type='hidden' name='endTime' value='"+endTime+"'>";
         hidden += "<input type='hidden' name='closed' value='"+closed+"'>";
-        body += attachment_field.body;
-        hidden += attachment_field.hidden;
-        obj = await makeQuestion(username, domain, manual_guid, { published, content, to, cc, sensitive, questiontype, options, endTime, closed, public, followshare, n_attachs, mediaType, href })
+        body += attachment_field.body + tags_field.body;
+        hidden += attachment_field.hidden + tags_field.hidden;
+        obj = await makeQuestion(username, domain, manual_guid, { published, content, tags, to, cc, sensitive, questiontype, options, endTime, closed, public, followshare, n_attachs, mediaType, href })
         console.log("UD", obj)
     }else{
         body += "<tr><td>Content</td><td><input type='text' name='content' value='"+content+"'></td></tr>"
         hidden += "<input type='hidden' name='content' value='"+content+"'>";
-        obj = makeArticle(username, domain, manual_guid, { published, content, name, url, to, cc, sensitive, public, followshare })
+        const tags_field = addTags({ tags, n_tags })
+        body += tags_field.body;
+        hidden += tags_field.hidden;
+        obj = makeArticle(username, domain, manual_guid, { published, content, name, url, tags, to, cc, sensitive, public, followshare })
     }
     body += "</table>"
     return { form_append: body, hidden_append: hidden, obj }

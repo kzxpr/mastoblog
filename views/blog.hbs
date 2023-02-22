@@ -1,5 +1,6 @@
 <div class="blog--wrap">
     <nav class="blog--menu">
+        <b>Tags:</b>
         <ul class="taglist">
             {{#each tags}}
                 {{#if (eq this.name ../tagname)}}
@@ -41,7 +42,7 @@
                         {{#if this.attachments}}
                             <div>
                                 {{#each this.attachments}}
-                                    <img src="{{this.url}}" style="width: 100%" />
+                                    {{> attachment this}}
                                 {{/each}}
                             </div>
                         {{/if}}
