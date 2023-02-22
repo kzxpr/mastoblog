@@ -305,10 +305,16 @@ async function makeObject(object, params, body){
     const n_options = body.n_options !== undefined ? body.n_options : 2;
     const closed = body.closed !== undefined ? body.closed : "";
 
+    var tags = new Array();
+    const found_tags = content.toLowerCase().match(/#(([a-z_]+)([\w_]+)?)/g);  
+    if(found_tags){
+        tags = found_tags;
+    }
+
     var href = new Array();
     var mediaType = new Array();
     var options = new Array();
-    var tags = new Array();
+    
     if(body.href !== undefined){
         if(Array.isArray(body.href)){
             href = body.href;
@@ -325,13 +331,13 @@ async function makeObject(object, params, body){
             options = new Array(body.options)
         }
     }
-    if(body.tags !== undefined){
+    /*if(body.tags !== undefined){
         if(Array.isArray(body.tags)){
             tags = body.tags;
         }else{
             tags = new Array(body.tags)
         }
-    }
+    }*/
     
     const manual_guid = body.manual_guid != "" ? body.manual_guid : guid;
     const url = body.url !== undefined ? body.url : "https://"+domain+"/post/"+manual_guid;
@@ -340,7 +346,8 @@ async function makeObject(object, params, body){
     const followshare = ((body.followshare !== undefined) && (body.followshare != "false"))
         ? true : false;
     const n_attachs = body.n_attachs !== undefined ? body.n_attachs : 0;
-    const n_tags = body.n_tags !== undefined ? body.n_tags : 0;
+    //const n_tags = body.n_tags !== undefined ? body.n_tags : 0;
+    const n_tags = tags.length;
     var body = "";
     var hidden = "";
     var obj;

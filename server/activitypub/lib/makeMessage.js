@@ -68,7 +68,7 @@ async function makeNote(username, domain, guid, params){
                 var t = {};
                 t.type = "Hashtag";
                 t.href = "https://"+domain+"/tag/"+tags[i];
-                t.name = "#"+tags[i]
+                t.name = tags[i]
                 tag_list.push(t)
             }
         }
@@ -123,7 +123,7 @@ function makeArticle(username, domain, guid, params){
                 var t = {};
                 t.type = "Hashtag";
                 t.href = "https://"+domain+"/tag/"+tags[i];
-                t.name = "#"+tags[i]
+                t.name = tags[i]
                 tag_list.push(t)
             }
         }
@@ -163,7 +163,7 @@ function makePage(username, domain, guid, params){
                 var t = {};
                 t.type = "Hashtag";
                 t.href = "https://"+domain+"/tag/"+tags[i];
-                t.name = "#"+tags[i]
+                t.name = tags[i]
                 tag_list.push(t)
             }
         }
@@ -200,7 +200,7 @@ async function makeEvent(username, domain, guid, params){
                 var t = {};
                 t.type = "Hashtag";
                 t.href = "https://"+domain+"/tag/"+tags[i];
-                t.name = "#"+tags[i]
+                t.name = tags[i]
                 tag_list.push(t)
             }
         }
@@ -310,7 +310,7 @@ async function makeQuestion(username, domain, guid, params){
                 var t = {};
                 t.type = "Hashtag";
                 t.href = "https://"+domain+"/tag/"+tags[i];
-                t.name = "#"+tags[i]
+                t.name = tags[i]
                 tag_list.push(t)
             }
         }
@@ -380,7 +380,7 @@ async function makeImage(username, domain, guid, params){
                 var t = {};
                 t.type = "Hashtag";
                 t.href = "https://"+domain+"/tag/"+tags[i];
-                t.name = "#"+tags[i]
+                t.name = tags[i]
                 tag_list.push(t)
             }
         }
