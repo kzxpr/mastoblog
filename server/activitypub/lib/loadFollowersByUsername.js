@@ -1,52 +1,33 @@
 const db = require("./../../../knexfile")
 const knex = require("knex")(db)
 
-async function loadFollowersByUsername(username, domain){
+const { wrapInOrderedCollection } = require("./wrappers")
+
+async function loadFollowersByUri(account_uri, page = 0){
+    console.log("NU")
     return new Promise(async (resolve, reject) => {
-        const followers = await knex("apfollowers").where("username", "=", username).select("follower")
+        const followers = await knex("apfollowers")
+            .where("username", "=", account_uri).select("follower")
+            //.limit(10).offset(10*(page-1))
         .then(function(rows){
             const followers = rows.map(function(v){
                 return v.follower;
             })
-            let followersCollection = {
-                "@context":["https://www.w3.org/ns/activitystreams"],
-                "type":"OrderedCollection",
-                "totalItems":followers.length,
-                "id":`https://${domain}/u/${username}/followers`,
-                "first": {
-                    "type":"OrderedCollectionPage",
-                    "totalItems":followers.length,
-                    "partOf":`https://${domain}/u/${username}/followers`,
-                    "orderedItems": followers,
-                    "id":`https://${domain}/u/${username}/followers?page=1`
-                }
-            };
+
+            var id = account_uri + "/followers"
+            /*if(page==0){
+                // wrap in collection
+                
+            }else{
+                // wrap in page
+                id = id+"?page="+page;
+            }*/
+            const followersCollection = wrapInOrderedCollection(id, followers, { wrapInFirst: true })
             resolve(followersCollection)
         })
-    })
-}
-
-async function loadFollowersByUri(uri){
-    return new Promise(async (resolve, reject) => {
-        const followers = await knex("apfollowers").where("username", "=", uri).select("follower")
-        .then(function(rows){
-            const followers = rows.map(function(v){
-                return v.follower;
-            })
-            let followersCollection = {
-                "@context":["https://www.w3.org/ns/activitystreams"],
-                "type":"OrderedCollection",
-                "totalItems":followers.length,
-                "id": uri+"/followers",
-                "first": {
-                    "type":"OrderedCollectionPage",
-                    "totalItems":followers.length,
-                    "partOf": uri+"/followers",
-                    "orderedItems": followers,
-                    "id": uri+"/followers?page=1"
-                }
-            };
-            resolve(followersCollection)
+        .catch((e) => {
+            console.log(e)
+            reject({ statuscode: 500, msg: "DB Error in loadFollowersByUri"})
         })
     })
 }
@@ -76,4 +57,4 @@ async function loadFollowingByUri(uri){
     })
 }
 
-module.exports = { loadFollowersByUsername, loadFollowersByUri, loadFollowingByUri }
+module.exports = { loadFollowersByUri, loadFollowingByUri }

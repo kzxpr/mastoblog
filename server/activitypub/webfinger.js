@@ -8,13 +8,11 @@ const { startAPLog, endAPLog } = require("./lib/aplog")
 router.get('/', async function (req, res) {
     const aplog = await startAPLog(req)
     let resource = req.query.resource;
-    console.log("WEBFINGER REQ!!!", resource)
     if (!resource || !resource.includes('acct:')) {
         return res.status(400).send('Bad request. Please make sure "acct:USER@DOMAIN" is what you are sending as the "resource" query parameter.');
     } else {
         let account = resource.replace('acct:','');
         const parts = account.split("@");
-        console.log("Looking up", parts[0], parts[1])
         loadWebfingerByUsername(parts[0], parts[1])
         .then(async (data) => {
             await endAPLog(aplog, data)

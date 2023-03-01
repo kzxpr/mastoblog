@@ -171,6 +171,22 @@ app.get("/checkfeed", checkFeed)
     res.send("OK")
 })*/
 
+app.get('/profile/:username', async function (req, res) {
+    let username = req.params.username;
+    let domain = req.app.get('domain');
+    if (!username) {
+        res.status(404);
+    } else {
+        await knex("apaccounts").where("handle", "=", username+"@"+domain)
+        .then(async(data) => {
+            res.send("Welcome to "+username+"'s profile!")
+        })
+        .catch(async(err) => {
+            res.status(err.statuscode).send("Error at /profile/"+username+": "+err.msg)
+        })
+    }
+});
+
 app.get("/feed", async (req, res) => {
     const siteinfo = await getSiteInfo();
     const messages = await Message.query()

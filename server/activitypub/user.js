@@ -9,7 +9,7 @@ const clc = require('cli-color');
 const { loadActorByUsername } = require("./lib/loadActorByUsername")
 const { loadFollowersByUri, loadFollowingByUri } = require("./lib/loadFollowersByUsername")
 const { makeMessage } = require("./lib/makeMessage");
-const { wrapInCreate } = require('./lib/wrappers');
+const { wrapInCreate, wrapInOrderedCollection } = require('./lib/wrappers');
 const { sendAcceptMessage } = require("./lib/sendAcceptMessage")
 const { sendLatestMessages, addresseesToString } = require("./lib/sendLatestMessages")
 const { addFollower, removeFollower } = require("./lib/addFollower")
@@ -42,50 +42,51 @@ router.get('/:username', async function (req, res) {
     }
 });
 
-router.get('/:username/profile', async function (req, res) {
-    //const aplog = await startAPLog(req)
-    let name = req.params.username;
-    let domain = req.app.get('domain');
-    if (!name) {
-        //await endAPLog(aplog, "No username provided", 404)
-        res.status(404);
-    } else {
-        await knex("apaccounts").where("handle", "=", username+"@"+domain)
-        .then(async(data) => {
-            //await endAPLog(aplog, data);
-            res.send("Welcome to "+name+"'s profile!")
-        })
-        .catch(async(err) => {
-            //await endAPLog(aplog, err.msg, err.statuscode)
-            res.status(err.statuscode).send("Error at /u/"+name+"/profile: "+err.msg)
-        })
-    }
-});
-
-
 router.get('/:username/followers', async function (req, res) {
+    console.log("lol")
     const aplog = await startAPLog(req)
     let username = req.params.username;
     let domain = req.app.get('domain');
-    
+
     const uri = await knex("apaccounts").where("handle", "=", username+"@"+domain).first()
-        .then((account) => {
-            return account.uri;
-        })
-        .catch(async(e) => {
-            console.error(e)
-            await endAPLog(aplog, "Username not found", 400)
-            return res.status(400).send('Bad request.');
-        })
+    .then((account) => {
+        return account.uri;
+    })
+    .catch(async(e) => {
+        console.error(e)
+        await endAPLog(aplog, "Username not found", 404)
+        return res.status(404).send('Bad request.');
+    })
+
+    const page = req.query.page ? req.query.page : 0;
+    /*if(req.query.page){
+        const page = req.query.page;
+            res.json({
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "id": "https://"+domain+"/u/"+username+"/followers?page="+page,
+                "type": "OrderedCollectionPage",
+                "totalItems": followers.length,
+                "partOf": "https://todon.eu/users/kzxpr/followers",
+                "orderedItems": followers
+              })
         
-        loadFollowersByUri(uri)
+    }else{
+        res.json({
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "id": "https://"+domain+"/u/"+username+"/followers",
+                "type": "OrderedCollection",
+                "totalItems": followers.length,
+                "first": "https://"+domain+"/u/"+username+"/followers?page=1"
+        })*/
+        loadFollowersByUri(uri, page)
         .then(async (followersCollection) => {
             await endAPLog(aplog, followersCollection)
             res.json(followersCollection);
         })
         .catch(async(e) => {
+            console.log(e)
             await endAPLog(aplog, e, 500)
-            res.statusCode(500);
+            res.sendStatus(500);
         });
     
 });
@@ -117,58 +118,17 @@ router.get('/:username/following', async function (req, res) {
     
 });
 
-router.get("/:username/messages/:messageid", async(req, res) => {
-    const aplog = await startAPLog(req)
-    const { username, messageid } = req.params;
-    const domain = req.app.get('domain');
-    if(!messageid){
-        res.sendStatus(400)
-        await endAPLog(aplog, "No message id", 400)
-    }else{
-        const message = await knex("apmessages").where("guid", "=", "https://"+domain+"/u/"+username+"/statuses/"+messageid).first()
-        .then(async(m) => {
-            if(m){
-                return m;
-            }else{
-                await endAPLog(aplog, "No message found for ID "+messageid, 400)
-                res.sendStatus(400)
-            }
-        })
-        .catch(async (e) => {
-            console.error(e)
-            await endAPLog(aplog, e, 500)
-            res.sendStatus(500)
-        })
-        let m = await makeMessage(message.type, username, domain, message.guid, { published: message.publishedAt, content: message.content });
-        const wrapped = wrapInCreate(m, username+"@"+domain, domain, [], message.guid)
-        await endAPLog(aplog, wrapped)
-        res.send(wrapped);
-    }    
-})
-
-router.post("/:username/outbox", async (req, res) => {
-    const aplog = await startAPLog(req)
-    console.log("TRIGGER post on /outbox", req.body)
-    await endAPLog(aplog, "ok")
-    res.send("OK")
-})
 
 router.get(["/:username/outbox"], async(req, res) => {
     const aplog = await startAPLog(req)
     const { username } = req.params;
     const { page } = req.query;
     const domain = req.app.get('domain');
-    const content = new Array("https://www.w3.org/ns/activitystreams")
-    /*if(!page){
-        res.json({
-            "first": "https://"+domain+"/u/"+username+"/outbox?page=true"
-        })
-    }else{*/
     
-        const user_uri = await knex("apaccounts").where("handle", "=", username+"@"+domain).select("uri").first()
-            .then((d) => { return d.uri })
-            .catch((e) => { res.sendStatus(500)})
-        const messages = await Message.query().where("attributedTo", user_uri)
+    const user_uri = await knex("apaccounts").where("handle", "=", username+"@"+domain).select("uri").first()
+        .then((d) => { return d.uri })
+        .catch((e) => { res.sendStatus(500)})
+    const messages = await Message.query().where("attributedTo", user_uri)
         .withGraphFetched("[addressees]")
         .then(async(messages) => {
             var output = new Array();
@@ -178,28 +138,10 @@ router.get(["/:username/outbox"], async(req, res) => {
             }
             return output;
         })
-        const data = {
-            "@content": content,
-            "id": "https://"+domain+"/u/"+username+"/outbox",
-            "type": "OrderedCollection",
-            "totalItems": messages.length,
-            "orderedItems": messages
-        }
-        await endAPLog(aplog, data)
-        res.json(data)
-        /*res.json({
-            "id": "https://"+domain+"/u/"+username+"/outbox",
-            "type": "OrderedCollectionPage",
-            
-            "partOf": "https://"+domain+"/u/"+username+"/outbox",
-            "first": {
-                "orderedItems": messages
-            }
-        })
-        /* "next": "https://"+domain+"/u/"+username+"/outbox?max_id=01FJC1Q0E3SSQR59TD2M1KP4V8&page=true",
-            "prev": "https://"+domain+"/u/"+username+"/outbox?min_id=01FJC1Q0E3SSQR59TD2M1KP4V8&page=true", */
-    //}
-    
+    const id = "https://"+domain+"/u/"+username+"/outbox";
+    const data = wrapInOrderedCollection(id, messages);
+    await endAPLog(aplog, data)
+    res.json(data)
 })
 
 router.get(["/:username/collections/featured"], async(req, res) => {
@@ -239,7 +181,6 @@ router.get("/:username/statuses/:messageid", async (req, res) => {
     const aplog = await startAPLog(req)
     const { username, messageid } = req.params;
     const domain = req.app.get('domain');
-    const context = new Array("https://www.w3.org/ns/activitystreams")
     const uri = "https://"+domain+"/u/"+username+"/statuses/"+messageid;
     const messages = await knex("apmessages").where("uri", "=", uri).first()
         .then(async (message) => {
