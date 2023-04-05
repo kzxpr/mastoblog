@@ -4,24 +4,23 @@ const knex = require("knex")(db)
 const { wrapInOrderedCollection } = require("./wrappers")
 
 async function loadFollowersByUri(account_uri, page = 0){
-    console.log("NU")
     return new Promise(async (resolve, reject) => {
+        var limit = 100;
+        var offset = 0;
+        var id = account_uri + "/followers"
+        if(page && page!=0){
+            limit = 10;
+            offset = limit*(page-1);
+            id = id+"?page="+page;
+        }
+
         const followers = await knex("apfollowers")
             .where("username", "=", account_uri).select("follower")
-            //.limit(10).offset(10*(page-1))
+            .limit(limit).offset(offset)
         .then(function(rows){
             const followers = rows.map(function(v){
                 return v.follower;
             })
-
-            var id = account_uri + "/followers"
-            /*if(page==0){
-                // wrap in collection
-                
-            }else{
-                // wrap in page
-                id = id+"?page="+page;
-            }*/
             const followersCollection = wrapInOrderedCollection(id, followers, { wrapInFirst: true })
             resolve(followersCollection)
         })
@@ -32,14 +31,25 @@ async function loadFollowersByUri(account_uri, page = 0){
     })
 }
 
-async function loadFollowingByUri(uri){
+async function loadFollowingByUri(account_uri, page){
     return new Promise(async (resolve, reject) => {
-        const followers = await knex("apfollowers").where("follower", "=", uri).select("username")
+        var limit = 100;
+        var offset = 0;
+        var id = account_uri + "/following"
+        if(page && page!=0){
+            limit = 10;
+            offset = limit*(page-1);
+            id = id+"?page="+page;
+        }
+
+        const followers = await knex("apfollowers").where("follower", "=", account_uri).select("username")
         .then(function(rows){
             const followings = rows.map(function(v){
                 return v.username;
             })
-            let followingCollection = {
+            const followingCollection = wrapInOrderedCollection(id, followings, { wrapInFirst: true })
+            resolve(followingCollection)
+            /*let followingCollection = {
                 "@context":["https://www.w3.org/ns/activitystreams"],
                 "type":"OrderedCollection",
                 "totalItems":followings.length,
@@ -52,7 +62,7 @@ async function loadFollowingByUri(uri){
                     "id": uri+"/following?page=1"
                 }
             };
-            resolve(followingCollection)
+            resolve(followingCollection)*/
         })
     })
 }

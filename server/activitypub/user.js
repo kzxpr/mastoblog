@@ -59,42 +59,24 @@ router.get('/:username/followers', async function (req, res) {
     })
 
     const page = req.query.page ? req.query.page : 0;
-    /*if(req.query.page){
-        const page = req.query.page;
-            res.json({
-                "@context": "https://www.w3.org/ns/activitystreams",
-                "id": "https://"+domain+"/u/"+username+"/followers?page="+page,
-                "type": "OrderedCollectionPage",
-                "totalItems": followers.length,
-                "partOf": "https://todon.eu/users/kzxpr/followers",
-                "orderedItems": followers
-              })
-        
-    }else{
-        res.json({
-                "@context": "https://www.w3.org/ns/activitystreams",
-                "id": "https://"+domain+"/u/"+username+"/followers",
-                "type": "OrderedCollection",
-                "totalItems": followers.length,
-                "first": "https://"+domain+"/u/"+username+"/followers?page=1"
-        })*/
-        loadFollowersByUri(uri, page)
-        .then(async (followersCollection) => {
-            await endAPLog(aplog, followersCollection)
-            res.json(followersCollection);
-        })
-        .catch(async(e) => {
-            console.log(e)
-            await endAPLog(aplog, e, 500)
-            res.sendStatus(500);
-        });
-    
+
+    loadFollowersByUri(uri, page)
+    .then(async (followersCollection) => {
+        await endAPLog(aplog, followersCollection)
+        res.json(followersCollection);
+    })
+    .catch(async(e) => {
+        console.log(e)
+        await endAPLog(aplog, e, 500)
+        res.sendStatus(500);
+    });    
 });
 
 router.get('/:username/following', async function (req, res) {
     const aplog = await startAPLog(req)
     let username = req.params.username;
     let domain = req.app.get('domain');
+    const page = req.query.page ? req.query.page : 0;
     
     const uri = await knex("apaccounts").where("handle", "=", username+"@"+domain).first()
         .then((account) => {
@@ -106,7 +88,7 @@ router.get('/:username/following', async function (req, res) {
             return res.status(400).send('Bad request.');
         })
         
-        loadFollowingByUri(uri)
+        loadFollowingByUri(uri, page)
         .then(async (followersCollection) => {
             await endAPLog(aplog, followersCollection)
             res.json(followersCollection);
@@ -213,6 +195,8 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
     const aplog = await startAPLog(req)
     const username = req.params.username || "!shared!";
     let domain = req.app.get('domain');
+    console.log("POST", clc.blue("/inbox"), "to "+username+" ()", req.body)
+    console.log(req.body.actor)
     const myURL = new URL(req.body.actor);
     let targetDomain = myURL.hostname;
     const reqtype = req.body.type;
@@ -516,6 +500,26 @@ router.post(['/inbox', '/:username/inbox'], async function (req, res) {
                     await endAPLog(aplog, "Don't know how to handle non-object Update", 500)
                     res.sendStatus(500)
                 }
+            }else if(reqtype=="Accept"){
+                const accept_from = req.body.actor;
+                const accept_to = req.body.object.actor;
+                const accept_id = req.body.object.id;
+
+                // TO-DO: Confirm accept_id to make sure
+                // that the follow request has actually been sent!
+                
+                // TO-DO: Add a 'update' to old followers
+                // to update the list of followers
+
+                await addFollower(accept_from, accept_to).then(async(msg) => {
+                    await endAPLog(aplog, "A follow was accepted ("+accept_from+" to "+accept_to+"): "+msg)
+                    res.sendStatus(200)
+                })
+                .catch(async(e) => {
+                    await endAPLog(aplog, "ERROR while adding follower "+accept_from+" to "+accept_to+": "+e, 500)
+                    res.sendStatus(500)
+                })
+                
             }else{
                 await endAPLog(aplog, "REQ type is not recognized...", 400)
                 res.sendStatus(400)

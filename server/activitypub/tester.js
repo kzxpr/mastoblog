@@ -478,6 +478,7 @@ async function makeObject(object, params, body){
 function wrap(activity, obj, params){
     const { username, domain, ref_url, to, cc } = params;
     const actor = "https://"+domain+"/u/"+username;
+    console.log(obj, actor, domain, ref_url)
     switch(activity){
         case 'Create': wrapped = wrapInCreate(obj, actor, "guid"); break;
         case 'Delete': wrapped = wrapInDelete(obj, actor, domain, [], { to, cc }); break;
@@ -584,6 +585,7 @@ router.post("/:username/:activity/:object/sign/send", async (req, res) => {
     const uri = "https://"+domain+"/u/"+username;
     const ref_url = uri+"/statuses/"+guid;
     const wrapped = wrap(activity, obj, { username, domain, ref_url, to, cc });
+    console.log("WRAP", wrapped)
     body += prettyTest(wrapped)
 
     var recipients = new Array();

@@ -105,7 +105,7 @@ function wrapInFollow(object, actor, domain = "", follower = [], guid = ""){
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
-      'id': actor+"/activity/"+guid+"/follow",
+      'id': guid+'/follow',
       'type': 'Follow',
       'actor': actor,
       'object': object
@@ -119,7 +119,7 @@ function wrapInUndo(object, actor, domain = "", follower = [], guid = "", params
     
     let message = {
       '@context': ['https://www.w3.org/ns/activitystreams'],
-      'id': actor+"/activity/"+guid+"/undo",
+      'id': actor+'/activity/'+guid+'/undo',
       'type': 'Undo',
       'actor': actor,
       'to': to,
